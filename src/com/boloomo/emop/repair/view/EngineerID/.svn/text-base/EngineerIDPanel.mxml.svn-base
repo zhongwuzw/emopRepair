@@ -79,7 +79,7 @@
 				repairKind.visible = false;
 				repairLoc.visible = false;
 				company.visible = false;
-				facplan.visible = false;
+			//	facplan.visible = false;
 				plan.visible = false;
 				repairDate.visible = false;
 				aheadDate.visible = false;
