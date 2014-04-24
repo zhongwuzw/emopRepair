@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:ItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				xmlns:s="library://ns.adobe.com/flex/spark" 
+				xmlns:mx="library://ns.adobe.com/flex/mx" 
+				autoDrawBackground="true" xmlns:button="com.boloomo.emop.component.button.*" creationComplete="itemrenderer1_creationCompleteHandler(event)" height="46" width="960">
+	<s:layout>
+		<s:BasicLayout/>
+	</s:layout>
+	<fx:Script>
+		<![CDATA[			
+			import com.boloomo.emop.component.button.BlmTextDeleteButton;
+			import com.boloomo.emop.component.type.BlmCloseButtonIObject;
+			import com.boloomo.event.BlmEvent;
+			
+			import mx.events.FlexEvent;
+		
+
+			protected function itemrenderer1_creationCompleteHandler(event:FlexEvent):void
+			{
+				roles.blm_delAllChild();
+				var obj:Object = this.data as Object;
+				if(obj[0] != null){
+				eName.text = obj[0].na;
+				if(obj[0].wcs != null){
+					for(var i:int = 0 ; i < obj[0].wcs.length ;i++){
+						var closeBtn:BlmCloseButtonIObject = new BlmCloseButtonIObject();
+						closeBtn.id = obj[0].wcs[i].id;
+						closeBtn.label = obj[0].wcs[i].owner;
+						var blmBtn:BlmTextDeleteButton = new BlmTextDeleteButton();
+						blmBtn.width = this.measureText(closeBtn.label).width + 35 ;
+						blmBtn.Blm_setData(closeBtn);
+						blmBtn.closeBtn = blmBtn ;
+						blmBtn.addEventListener("close_click",onDelBtn);
+						roles.blm_addChild(blmBtn);
+					}
+				}
+			}
+			}	
+			public function onDelBtn(e:BlmEvent):void{
+				var delBtn:BlmTextDeleteButton = e.data as BlmTextDeleteButton;
+				roles.blm_delChild(delBtn);
+			}
+
+
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:Label x="0" y="13" id="eName" text="主机" width="100" height="23" textAlign="center" />
+	<button:BlmLeftRightAddGroup width="755" id="roles" x="105" y="10" height="23"/>
+	<mx:VRule x="0" y="0" height="45" width="3"/>
+	<mx:VRule x="960"  height="45" width="3"/>
+	<mx:HRule x="0" y="0" height="3" width="960" />
+	<mx:HRule x="0" y="45" height="3" width="960" />
+	<!--<button:blmAddButton id="addList" x="930" y="15" width="13" height="13" visible="true" click="addList_clickHandler(event)" />-->
+</s:ItemRenderer>

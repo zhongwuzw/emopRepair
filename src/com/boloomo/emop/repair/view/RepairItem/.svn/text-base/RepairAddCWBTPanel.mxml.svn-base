@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<titlewindow:blmTitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009" 
+							xmlns:s="library://ns.adobe.com/flex/spark" 
+							xmlns:mx="library://ns.adobe.com/flex/mx" 
+							xmlns:titlewindow="com.boloomo.emop.component.titlewindow.*"
+							title="添加设备卡"
+							creationComplete="init(event)"
+							close="blmtitlewindow_closeHandler()"
+							width="250" height="138" xmlns:cwbt="com.boloomo.emop.component.cwbt.*">
+	<fx:Script>
+		<![CDATA[
+			import com.boloomo.emop.repair.type.ShipObject;
+			import com.boloomo.event.BlmEvent;
+			
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			
+			/**
+			 * 初始化
+			 */ 
+			protected function init(event:FlexEvent):void
+			{
+				// TODO Auto-generated method stub
+				this.addEventListener(RepairEventType.REPAIR_ITEM_ADD_CWBT,getShipInfo);
+				
+			}
+			protected function blmtitlewindow_closeHandler():void
+			{
+				// TODO Auto-generated method stub
+				PopUpManager.removePopUp(this);
+				this.visible=false;
+			}
+
+			/**
+			 * 事件响应
+			 * 获取船舶信息
+			 */ 
+			protected function getShipInfo(e:BlmEvent):void{	
+				//shipId="0001022" shipName="xinhaikou"
+				cwbtId.shipId=(e.data as ShipObject).shipId;
+				cwbtId.shipName=(e.data as ShipObject).shipName;
+			}		
+			
+			protected function confirm_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				var cwbt:String=cwbtId.CWBT;
+				this.dispatchEvent(new BlmEvent(RepairEventType.REPAIR_ITEM_ADD_CWBT_BACK,cwbt));
+				blmtitlewindow_closeHandler();
+			}
+			/**
+			 * 取消按钮
+			 */ 
+			protected function cancel_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				blmtitlewindow_closeHandler();
+				
+			}
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+	</fx:Declarations>
+	
+	<s:Button id="confirm" right="110" bottom="10" label="确定"
+			  click="confirm_clickHandler(event)"/>
+	<s:Button id="cancel" right="20" bottom="10" label="取消"
+			  click="cancel_clickHandler(event)"/>
+	<s:Label y="27" left="10" text="CWBT:"/>
+	<cwbt:CwbtPanel id="cwbtId" y="23" left="55" width="173" namer="cwbt" />
+</titlewindow:blmTitleWindow>

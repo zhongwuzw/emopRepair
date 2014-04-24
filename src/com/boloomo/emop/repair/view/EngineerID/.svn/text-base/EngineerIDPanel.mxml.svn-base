@@ -1,0 +1,444 @@
+<?xml version="1.0" encoding="utf-8"?>
+<titlewindow:blmTitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009" 
+							xmlns:s="library://ns.adobe.com/flex/spark" 
+							xmlns:mx="library://ns.adobe.com/flex/mx" 
+							xmlns:titlewindow="com.boloomo.emop.component.titlewindow.*" 
+							width="1024" height="500" title="工程单详情"
+							xmlns:annex="com.boloomo.emop.component.annex.*" 
+							xmlns:button="com.boloomo.emop.component.button.*"
+							color="0x637289"
+							creationComplete="init(event)"
+							close="blmtitlewindow1_closeHandler(event)" 
+							xmlns:dropList="com.boloomo.emop.component.dropList.*"   xmlns:dateChooser="com.boloomo.emop.component.dateChooser.*" xmlns:upLoad="com.boloomo.emop.component.upLoad.*" xmlns:process="com.boloomo.emop.sparePurchase.view.process.*" xmlns:process1="com.boloomo.emop.component.process.*">
+
+	<fx:Script>
+		<![CDATA[
+			import com.boloomo.emop.component.prompt.PromptEvent;
+			import com.boloomo.emop.component.prompt.promrtWindow;
+			import com.boloomo.emop.component.type.BlmDropListItemObject;
+			import com.boloomo.emop.repair.components.ShipRepairRemarksPanel;
+			import com.boloomo.emop.repair.control.ProjectItemControl;
+			import com.boloomo.event.BlmEvent;
+			import com.boloomo.util.AppUtil;
+			
+			import mx.events.FlexEvent;
+			
+			public var remarksPanel:ShipRepairRemarksPanel = null;
+			private var _promrt:promrtWindow = null;
+			var promrtDeleteConfirm:promrtWindow;
+			
+			public function init(event:FlexEvent):void
+			{
+/* 				var fakeObj:Object = {flag:false,applyid:"010002345",applydate:"2014-01-12",projectcode:"A-1023",projectname:"项目名称1",startDate:"2014-01-03",finishDate:"2014-04-01"};
+				fakeList.addItem(fakeObj);
+				var fakeObj1:Object = {flag:true,applyid:"010002345",applydate:"2014-01-12",projectcode:"A-1023",projectname:"项目名称1",startDate:"2014-01-03",finishDate:"2014-04-01"};
+				fakeList.addItem(fakeObj1);
+				var fakeObj2:Object = {flag:false,applyid:"010002345",applydate:"2014-01-12",projectcode:"A-1023",projectname:"项目名称1",startDate:"2014-01-03",finishDate:"2014-04-01"};
+				fakeList.addItem(fakeObj2);
+				var fakeObj3:Object = {flag:true,applyid:"010002345",applydate:"2014-01-12",projectcode:"A-1023",projectname:"项目名称1",startDate:"2014-01-03",finishDate:"2014-04-01"};
+				fakeList.addItem(fakeObj3);
+				var fakeObj4:Object = {flag:false,applyid:"010002345",applydate:"2014-01-12",projectcode:"A-1023",projectname:"项目名称1",startDate:"2014-01-03",finishDate:"2014-04-01"};
+				fakeList.addItem(fakeObj4);
+				var fakeObj5:Object = {flag:false,applyid:"010002345",applydate:"2014-01-12",projectcode:"A-1023",projectname:"项目名称1",startDate:"2014-01-03",finishDate:"2014-04-01"};
+				fakeList.addItem(fakeObj5);
+				var fakeObj6:Object = {flag:false,applyid:"010002345",applydate:"2014-01-12",projectcode:"A-1023",projectname:"项目名称1",startDate:"2014-01-03",finishDate:"2014-04-01"};
+				fakeList.addItem(fakeObj6);
+				fakeList.refresh(); */
+				
+				var repairKindVec:Vector.<BlmDropListItemObject> = new Vector.<BlmDropListItemObject>();
+				for(var i:int = 0;i <= 1;i++)
+				{
+					var kindObj:BlmDropListItemObject = new BlmDropListItemObject();
+					kindObj.id = String(i);
+					if(i == 0)
+						kindObj.label = "厂修";
+					else if(i == 1)
+						kindObj.label = "航修";
+	
+					repairKindVec.push(kindObj);
+				}
+				repairKind1.blm_resetContent(repairKindVec,0);
+				
+				var event:FlexEvent;
+				blmtitlewindow1_creationCompleteHandler(event);
+			}
+			
+			public function setEditEnable():void
+			{
+				cancelBtn.visible = true;
+				cancelBtn.enabled = true;
+				saveBtn.visible = true;
+				saveBtn.enabled = true;
+				deleteBtn.visible = false;
+				deleteBtn.enabled = false;
+				editBtn.visible = false;
+				editBtn.enabled = false;
+			
+				/* projectID.visible = false;
+				state.visible = false; */
+				repairKind.visible = false;
+				repairLoc.visible = false;
+				company.visible = false;
+				facplan.visible = false;
+				plan.visible = false;
+				repairDate.visible = false;
+				aheadDate.visible = false;
+				realPlan.visible = false;
+				repairDate2.visible = false;
+				saveTime.visible = false;
+				
+			/* 	projectID1.visible = true;
+				state1.visible = true; */
+				repairKind1.visible = true;
+				repairLoc1.visible = true;
+				company1.visible = true;
+				/* facplan1.visible = true; */
+				plan1.visible = true;
+				
+				plan3.visible = true;
+				
+			/* 	repairDate1.visible = true;
+				aheadDate1.visible = true; */
+				urgency.enabled = true;
+				ca.enabled = true;
+				reason.editable = true;
+				realPlan1.visible = true;
+				realPlan3.visible  = true;
+		/* 		repairDate3.visible = true;
+				saveTime1.visible = true; */
+				ca0.enabled = true;
+				ca1.enabled = true;
+				ca2.enabled = true;
+				ca3.enabled = true;
+				ca4.enabled = true;
+				ca5.enabled = true;
+				ca6.enabled = true;
+				ca7.enabled = true;
+				ca8.enabled = true;
+				ca9.enabled = true;
+				ca10.enabled = true;
+				ca11.enabled = true;
+				ca12.enabled = true;
+				ca13.enabled = true;
+			}
+			
+			//窗口加载之后及编辑完成之后禁用编辑功能
+			public function blmtitlewindow1_creationCompleteHandler(event:FlexEvent):void
+			{
+				cancelBtn.visible = false;
+				cancelBtn.enabled = false;
+				saveBtn.visible = false;
+				saveBtn.enabled = false;
+				deleteBtn.visible = true;
+				deleteBtn.enabled = true;
+				editBtn.visible = true;
+				editBtn.enabled = true;
+				
+				/* projectID.visible = true;
+				state.visible = true; */
+				repairKind.visible = true;
+				repairLoc.visible = true;
+				company.visible = true;
+				facplan.visible = true;
+				plan.visible = true;
+				repairDate.visible = true;
+				aheadDate.visible = true;
+				realPlan.visible = true;
+				repairDate2.visible = true;
+				saveTime.visible = true;
+				
+				/* projectID1.visible = false;
+				state1.visible = false; */
+				repairKind1.visible = false;
+				repairLoc1.visible = false;
+				company1.visible = false;
+				/* facplan1.visible = false; */
+				plan1.visible = false;
+				
+				plan3.visible = false;
+				
+		/* 		repairDate1.visible = false;
+				aheadDate1.visible = false; */
+				urgency.enabled = false;
+				ca.enabled = false;
+				reason.editable = false;
+				realPlan1.visible = false;
+				realPlan3.visible = false;
+			/* 	repairDate3.visible = false;
+				saveTime1.visible = false; */
+				ca0.enabled = false;
+				ca1.enabled = false;
+				ca2.enabled = false;
+				ca3.enabled = false;
+				ca4.enabled = false;
+				ca5.enabled = false;
+				ca6.enabled = false;
+				ca7.enabled = false;
+				ca8.enabled = false;
+				ca9.enabled = false;
+				ca10.enabled = false;
+				ca11.enabled = false;
+				ca12.enabled = false;
+				ca13.enabled = false;
+			}
+
+			protected function engineerEdit_clickHandler(event:MouseEvent):void
+			{
+			/* 	saveEdit.enabled = true;
+				quitEdit.enabled = true; */
+				cancelBtn.visible = true;
+				cancelBtn.enabled = true;
+				saveBtn.visible = true;
+				saveBtn.enabled = true;
+				deleteBtn.visible = false;
+				deleteBtn.enabled = false;
+				editBtn.visible = false;
+				editBtn.enabled = false;
+				
+				//realPlan1.blm_setDefaultDate(new Date());
+				ProjectItemControl.Instance.reqEditEnginnerInfo();
+			}
+
+
+			protected function saveEdit_clickHandler(event:MouseEvent):void
+			{
+				ProjectItemControl.Instance.reqSaveEngineerInfo();
+/* 				saveEdit.enabled = false;
+				quitEdit.enabled = false; */
+				cancelBtn.visible = false;
+				cancelBtn.enabled = false;
+				saveBtn.visible = false;
+				saveBtn.enabled = false;
+				deleteBtn.visible = true;
+				deleteBtn.enabled = true;
+				editBtn.visible = true;
+				editBtn.enabled = true;
+			}
+
+
+			protected function quitEdit_clickHandler(event:MouseEvent):void
+			{
+				ProjectItemControl.Instance.reqQuitEditInfo();
+/* 				saveEdit.enabled = false;
+				quitEdit.enabled = false; */
+				cancelBtn.visible = false;
+				cancelBtn.enabled = false;
+				saveBtn.visible = false;
+				saveBtn.visible = false;
+				deleteBtn.visible = true;
+				deleteBtn.enabled = true;
+				editBtn.visible = true;
+				editBtn.enabled = true;
+				
+			}
+
+
+			protected function engineerRepairIDManage_clickHandler(event:MouseEvent):void
+			{
+				ProjectItemControl.Instance.reqEngineerRepairIDManage();
+			}
+			
+			protected function remarkLB_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				//			BlmEventManager.Instance.dispatchEvent(new BlmEvent(RemarkEvent.SHOW_REMARKS_WINDOW));
+				if(remarksPanel == null)
+				{
+					remarksPanel = ShipRepairRemarksPanel(PopUpManager.createPopUp(AppUtil.Instance.app,ShipRepairRemarksPanel,false));
+				}
+				remarksPanel.visible = true;
+				PopUpManager.centerPopUp(remarksPanel);
+				PopUpManager.bringToFront(remarksPanel);				
+			}
+			
+			protected function delSpare_clickHandler(event:MouseEvent):void
+			{
+/* 				if(_promrt == null || _promrt.visible == false)
+					_promrt = promrtWindow(PopUpManager.createPopUp(AppUtil.Instance.app,promrtWindow,true));
+				_promrt.visible = true;
+				_promrt.show(PromptEvent.DELALERT,"你确定要删除该工程单?");
+				_promrt.addEventListener("THISCONFIRM",onConfirmDelete);
+				_promrt.addEventListener("THISCANCEL",closePromrt);
+				_promrt.addEventListener("THISCLOSE",closePromrt);
+				PopUpManager.centerPopUp(_promrt);
+				PopUpManager.bringToFront(_promrt);	 */
+				promrtDeleteConfirm = promrtWindow(PopUpManager.createPopUp(AppUtil.Instance.app,promrtWindow,true));
+				promrtDeleteConfirm.show(PromptEvent.DELALERT,'你确定要删除改工程单？');
+				promrtDeleteConfirm.addEventListener("THISCONFIRM",onConfirmDelete);
+				promrtDeleteConfirm.addEventListener("THISCNACEL",closePromrt);
+				promrtDeleteConfirm.addEventListener("THISCLOSE",closePromrt);
+				
+				PopUpManager.centerPopUp(promrtDeleteConfirm);
+				promrtDeleteConfirm.visible = true;
+				
+			}
+			
+			public function onConfirmDelete(e:BlmEvent):void
+			{
+				ProjectItemControl.Instance.reqDelProjectID();
+				PopUpManager.removePopUp(promrtDeleteConfirm);
+				promrtDeleteConfirm.visible=false;
+				PopUpManager.removePopUp(this);
+				this.visible = false;
+			}
+			
+			public function closePromrt():void
+			{
+				PopUpManager.removePopUp(promrtDeleteConfirm);
+				promrtDeleteConfirm.visible=false;
+			}
+
+
+			protected function engineerRepairDelete_clickHandler(event:MouseEvent):void
+			{	
+				ProjectItemControl.Instance.onHandleDeleteRepairID(listGrid.selectedItem);
+			}
+
+		]]>
+	</fx:Script>
+
+
+	<titlewindow:layout>
+		<s:BasicLayout/>
+	</titlewindow:layout>
+	<fx:Script>
+		<![CDATA[
+			import mx.events.CloseEvent;
+			import mx.managers.PopUpManager;
+			protected function blmtitlewindow1_closeHandler(event:CloseEvent):void
+			{
+				PopUpManager.removePopUp(this);
+				this.visible=false;
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<s:ArrayCollection id="fakeList"/>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:Group x="0" y="28" width="1022" height="247" visible="true">
+		<s:Label x="10" y="10" text="船名：" />
+		<s:Label id="shipName" x="45" y="10"/>
+		
+		<s:Label x="110" y="10" text="工程单号："/>
+		<s:Label id="projectID" x="175" y="10"/>
+		<!--<s:TextInput id="projectID1" x="175" y="7" width="75"/>-->
+		
+		<s:Label x="280" y="10" text="状态："/>
+		<s:Label id="state" x="328" y="10"/>
+		<!--<s:TextInput id="state1" x="328" y="7" width="50"/>-->
+		
+		<s:Label x="395" y="10" text="修理类别："/>
+		<s:Label id="repairKind" x="460" y="10"/>
+		<dropList:BlmDropListButton id="repairKind1" x="460" y="7" width="50"/>
+		<!--<s:TextInput id="repairKind1" x="460" y="7" width="50"/>-->
+		
+		<s:Label x="515" y="10" text="修理地点："/>
+		<s:Label id="repairLoc" x="580" y="10"/>
+		<s:TextInput id="repairLoc1" x="580" y="7" width="50"/>
+		
+		<s:Label x="655" y="10" text="施工单位："/>
+		<s:Label id="company" x="720" y="10"/>
+		<s:TextInput id="company1" x="720" y="7" width="120"/>
+		
+		<s:Label x="847.15" y="10" text="厂修计划："/>
+		<s:Label id="facplan" x="908.6" y="10" height="15"/>
+		<!--<s:TextInput id="facplan1" x="908.6" y="7" width="65"/>-->
+		
+		<s:Label x="10" y="35" text="计划："/>
+		<s:Label id="plan" x="45" y="35"/>
+		<dateChooser:BlmDateSingleButton id="plan1" x="45" y="32"/>
+		<s:Label id="plan2" x="180" y="35"/>
+		<dateChooser:BlmDateSingleButton id="plan3" x="180" y="32"/>
+		<!--<s:TextInput id="plan1" x="45" y="32" width="50"/>-->
+		
+		<mx:Image source="@Embed('assets/arrow.png')" x="140" y="34"/>
+		
+		<s:Label x="323.75" y="35" text="修期："/>
+		<s:Label id="repairDate" x="370" y="35"/>
+		<s:Label x="395" y="35" text="天"/>
+		<!--<s:TextInput id="repairDate1" x="370" y="32" width="50"/>-->
+		
+		<s:Label x="470.35" y="35" text="提前："/>
+		<s:Label id="aheadDate" x="533" y="35"/>
+		<s:Label x="557" y="35" text="天"/>
+		<!--<s:TextInput id="aheadDate1" x="533" y="32" width="50"/>-->
+		
+		<s:CheckBox id="urgency" x="103.55" y="147.2" label="除气证书"/>
+		<s:CheckBox id="ca" x="222.8" y="147.15" label="照明"/>
+		<s:Label x="10.45" y="89.3" text="施工注意事项：" height="17"/>
+		<s:TextArea id="reason" x="106.65" y="95.35" height="40" width="815"/>
+		
+		<s:Label x="10" y="59" text="实际"/>
+		<s:Label id="realPlan" x="45" y="59"/>
+		<dateChooser:BlmDateSingleButton id="realPlan1" x="45" y="56"/>
+		<s:Label id="realPlan2" x="180" y="59"/>
+		<dateChooser:BlmDateSingleButton id="realPlan3" x="180" y="56"/>
+		<!--<s:TextInput id="realPlan1" x="45" y="56" width="50"/>-->
+		
+		<mx:Image source="@Embed('assets/arrow.png')" x="140" y="58"/>
+		
+		<s:Label x="323" y="59" text="修期："/>
+		<s:Label id="repairDate2" x="370" y="59"/>
+		<s:Label x="395" y="59" text="天"/>
+		<!--<s:TextInput id="repairDate3" x="370" y="56" width="50"/>-->
+				 
+		<s:Label x="470" y="59" text="节省："/>
+		<s:Label id="saveTime" x="533" y="59"/>
+		<s:Label x="557" y="59" text="天"/>
+		<!--<s:TextInput id="saveTime1" x="533" y="56" width="50"/>-->
+		
+		<s:CheckBox id="ca0" x="344.05" y="149" label="通风"/>
+		<s:CheckBox id="ca1" x="446.1" y="149" label="前清洁"/>
+		<s:CheckBox id="ca2" x="538.7" y="149" label="后清洁"/>
+		<s:CheckBox id="ca3" x="639.7" y="149" label="场地"/>
+		<s:CheckBox id="ca4" x="739.4" y="149" label="吊机服务"/>
+		<s:CheckBox id="ca5" x="840.85" y="149" label="港内运输"/>
+		<s:Label x="10" y="147.5" text="其它说明项：" height="18"/>
+	</s:Group>
+	<s:Group x="0" y="202" width="1022" height="218">
+		<mx:DataGrid x="0" y="52" id="listGrid" width="1022" height="168"
+					 dataProvider="{fakeList}">
+			<mx:columns>
+				<mx:DataGridColumn itemRenderer="com.boloomo.emop.repair.view.EngineerID.EngineerIDState"/>
+				<mx:DataGridColumn headerText="申请单号" dataField="applyid" textAlign="center"/>
+				<mx:DataGridColumn headerText="申请日期" dataField="myadate" textAlign="center"/>
+				<mx:DataGridColumn headerText="项目代码" dataField="itemid" textAlign="center"/>
+				<mx:DataGridColumn headerText="项目名称" dataField="itemn" textAlign="center"/>
+				<mx:DataGridColumn headerText="开始日期" dataField="mybdate" textAlign="center"/>
+				<mx:DataGridColumn headerText="结束日期" dataField="myfdate" textAlign="center"/>
+				<mx:DataGridColumn itemRenderer="com.boloomo.emop.repair.view.EngineerID.EngineerFinish" textAlign="center"/>
+			</mx:columns>
+		</mx:DataGrid>
+		<upLoad:EmopFileUpload id="fileUpload" x="56.8" y="30.2" width="900" height="27"/>
+		<s:Label x="11.55" y="36.1" text="附件：" height="15"/>
+		<s:CheckBox id="ca6" x="102" y="-6.5" label="港外运输"/>
+		<s:CheckBox id="ca7" x="223.15" y="-6.5" label="开工艺孔"/>
+		<s:CheckBox id="ca8" x="345.9" y="-6.5" label="防腐剂"/>
+		<s:CheckBox id="ca9" x="447.45" y="-6.5" label="油漆作业"/>
+		<s:CheckBox id="ca10" x="539.9" y="-6.5" label="压力测试"/>
+		<s:CheckBox id="ca11" x="639.7" y="-6.5" label="修改图纸"/>
+		<s:CheckBox id="ca12" x="739.4" y="-6.5" label="材料施工方供"/>
+		<s:CheckBox id="ca13" x="841.35" y="-6.5" label="材料船方供"/>
+	</s:Group>
+	<s:Group x="0" width="1022" height="35" bottom="10">
+		<!--<button:blmEditButton id="engineerRepairIDManage" x="12" y="5" width="14" height="14" click="engineerRepairIDManage_clickHandler(event)"/>-->
+		<button:blmAddButton id="engineerRepairIDManage" x="12" y="5" width="14" height="14" click="engineerRepairIDManage_clickHandler(event)"/>
+		<button:blmDeleteButton id="engineerRepairDelete" x="37" y="5" width="14" height="14" click="engineerRepairDelete_clickHandler(event)"/>
+		<mx:VRule y="5" width="1" height="14" x="32"/>
+	</s:Group>
+	
+	<button:blmBarrelButton id="deleteBtn" x="900" top="10" width="20" click="delSpare_clickHandler(event)"/>
+	<button:blmSaveButton id="saveBtn" x="900" top="10" width="20" click="saveEdit_clickHandler(event)" />
+	
+	<button:blmEditButton id="editBtn" x="920" top="6" width="20" click="engineerEdit_clickHandler(event)"/>	
+	<button:blmCancelButton id="cancelBtn" x="922" top="10" width="20" click="quitEdit_clickHandler(event)"/>
+				  
+	
+	<button:blmBookButton x="946" top="10" width="20" click="remarkLB_clickHandler(event)"/>	
+<!--	<s:Button x="864" y="10" label="编辑" id="engineerEdit" click="engineerEdit_clickHandler(event)"/>
+	<s:Button x="942" y="10" label="保存" enabled="false" id="saveEdit" click="saveEdit_clickHandler(event)"/>
+	<s:Button x="786" y="10" label="放弃" id="quitEdit" enabled="false" click="quitEdit_clickHandler(event)"/>-->
+<!--	<button:blmMenuButton id="menu" right="12" top="35">
+	</button:blmMenuButton>-->
+</titlewindow:blmTitleWindow>

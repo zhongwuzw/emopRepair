@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		   xmlns:s="library://ns.adobe.com/flex/spark" 
+		   xmlns:mx="library://ns.adobe.com/flex/mx" 
+		   width="610" height="25" xmlns:button="com.boloomo.emop.component.button.*">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.boloomo.emop.repair.components.RepairItemWorkcardButton;
+			import com.boloomo.emop.repair.control.RepairItemControl;
+			import com.boloomo.emop.repair.model.RepairModel;
+			import com.boloomo.emop.repair.type.EquipObject;
+			import com.boloomo.emop.repair.type.WorkCardObject;
+			import com.boloomo.event.BlmEvent;
+			import com.boloomo.util.AppUtil;
+			import com.boloomo.util.maps.HashMap;
+			
+			import mx.managers.PopUpManager;
+			
+			import spark.core.NavigationUnit;
+			
+			
+			/**
+			 *@author zhoucd 
+			 */
+			
+			protected var addTurbineView:RepairAddTurbinePanel=null;
+			public var itemId:String=null;
+			public var shipId:String=null;
+			public var equipID:String=null;//设备ID
+			[Bindable]
+			public var equipName:String=null;//设备名称
+			public var chosenCards:HashMap=null;//设置已选中的设备工作卡
+			public var currentWorkCardBtn:RepairItemWorkcardButton=null;//保存当前点击的工作卡按钮
+			public var currentWorkCard:WorkCardObject=null;//当前选中的工作卡
+			
+			//------------------组建动作--------------------------------------------------------------------------
+			/**
+			 * 设置船舶左右滑动按钮的可用情况
+			 * callLater 调用
+			 */ 
+			protected function adjustLeftRightButton():void{
+				shipLeftBtn.enabled=false;
+				if(workCardHGroup.numChildren > workCardHGroup.columnCount)//此处有BUG，不能动态显示个数
+					shipRightBtn.enabled=true;
+				else
+					shipRightBtn.enabled=false;				
+			}
+			
+			/**
+			 * 轮机 HGroup
+			 * 向左滚动
+			 */ 
+			protected function shipLeftBtn_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				RepairItemControl.Instance.setCurrentEquip(this.equipID);
+				smp.valueBy = workCardHGroup.getHorizontalScrollPositionDelta(NavigationUnit.LEFT);
+				anmiate.play();
+				
+			}
+			/**
+			 * 轮机 HGroup
+			 * 向右滚动
+			 */ 
+			protected function shipRightBtn_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				RepairItemControl.Instance.setCurrentEquip(this.equipID);
+				smp.valueBy = workCardHGroup.getHorizontalScrollPositionDelta(NavigationUnit.RIGHT);
+				anmiate.play();
+				
+			}
+			/**
+			 * '添加按钮' 点击事件
+			 * 添加工作卡
+			 */ 
+			protected function blmaddbutton_clickHandler(event:MouseEvent):void
+			{
+				RepairItemControl.Instance.setCurrentEquip(this.equipID);//在control中设置当前编辑的设备
+				this.dispatchEvent(new BlmEvent(RepairEventType.REPAIR_ITEM_GETEQUIP_BACK,this));//在repaitItemPanel中设置当前编辑的设备
+				
+				if(addTurbineView == null || addTurbineView.visible==false)
+				{
+					addTurbineView = RepairAddTurbinePanel(PopUpManager.createPopUp(AppUtil.Instance.app,RepairAddTurbinePanel,true));
+				}
+				
+				RepairModel.Instance.reqAddable(shipId,equipID);//申请工作卡列表
+				
+				addTurbineView.visible = true;
+				PopUpManager.centerPopUp(addTurbineView);
+				PopUpManager.bringToFront(addTurbineView);	
+				
+				addTurbineView.setInfo(this.itemId,this.shipId,this.equipID,chosenCards);//传递当前工作卡的各种信息itemId、shipId、equipId给添加页面
+				
+				//				addTurbineView.dispatchEvent(new BlmEvent(RepairEventType.REPAIR_ITEM_CHOSEN_WORKCARDS,chosenCards));//设置已有的工作卡				
+				
+				//				addTurbineView.addEventListener(RepairEventType.REPAIR_ITEM_SELECT_EDIT_WORKCARDS,editCards);//监听修改信息
+			}
+			/**
+			 * '设备名' 点击事件
+			 * 设置当前的设备
+			 * 显示设备信息
+			 */ 
+			protected function equipLabel_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				RepairItemControl.Instance.setCurrentEquip(this.equipID);//在control中设置当前编辑的设备
+				this.dispatchEvent(new BlmEvent(RepairEventType.REPAIR_ITEM_GETEQUIP_BACK,this));//在repaitItemPanel中设置当前编辑的设备
+				//显示信息
+				
+			}
+			//-------------------------------------------------------------
+			/**
+			 * 设置改组件中的值
+			 * itemId、shipId、equipId
+			 */ 
+			public function getData(itemid:String,shipID:String,equipObj:EquipObject):void{
+				this.itemId=itemid;
+				this.shipId=shipID;
+				equipName=equipObj.equipName;
+				equipID=equipObj.equiqId;
+				chosenCards=new HashMap();
+				chosenCards=equipObj.workCardMap;//设置当前的工作卡信息
+				callLater(showWorkCards);	
+			}
+			/**
+			 * 获取工作卡列表
+			 * 传递工作卡列表
+			 */ 
+			public function getWorkCardList(temphash:HashMap):void{
+				addTurbineView.getWorkCardList(temphash);
+			}
+			
+			/**
+			 * 显示工作卡信息
+			 */ 
+			protected function showWorkCards():void{
+				workCardHGroup.removeAllElements();//清空组件
+				if(chosenCards.size()<1)
+					return;
+				var workCardsArray:Array=chosenCards.getValues();
+				while(workCardsArray.length){
+					var workCardBtn:RepairItemWorkcardButton = new RepairItemWorkcardButton();
+					var workcard:WorkCardObject=workCardsArray.pop() as WorkCardObject;
+					workCardBtn.annex_dataProvide(workcard);
+					workCardBtn.width=80;
+					workCardHGroup.addElement(workCardBtn);
+					//添加监听		
+					workCardBtn.addEventListener(RepairEventType.REPAIR_ITEM_DELETE_WORKCARD,deleteWorkcard);//删除工作卡
+					workCardBtn.addEventListener(RepairEventType.REPAIR_ITEM_SHOW_WORKCARD_INFO,showWorkCardInfo);//显示工作卡信息					
+				}				
+				callLater(adjustLeftRightButton);
+			}
+			//---------------------------------------------------------------------------------------	
+			/**
+			 * 工作卡的返回处理
+			 */ 
+			public function editCards(wcds:HashMap):void{				
+				chosenCards=new HashMap();
+				chosenCards=wcds;	
+				showWorkCards();
+			}		
+			/**
+			 * 删除工作卡 返回处理
+			 * 删除工作卡
+			 */ 
+			protected function deleteWorkcard(e:BlmEvent):void{
+				this.dispatchEvent(new BlmEvent(RepairEventType.REPAIR_ITEM_GETEQUIP_BACK,this));//在repaitItemPanel中设置当前编辑的设备
+				
+				currentWorkCardBtn=e.data as RepairItemWorkcardButton;
+				var WorkCards:Vector.<WorkCardObject>=new Vector.<WorkCardObject>();//要删除的工作卡向量
+				WorkCards.push(chosenCards.getValue((e.data as RepairItemWorkcardButton).WorkCardID));
+				//itemId:String,type:Number,shipId:String,equipId:String,wcId:Vector.<WorkCardObject>
+				if(WorkCards.length>0)
+					RepairModel.Instance.reqAddDelWorkCard(itemId,2,shipId,equipID,WorkCards);				
+			}
+			
+			/**
+			 * 工作卡  点击处理事件
+			 * 设置当前点击的工作卡
+			 * 显示相关信息
+			 */
+			protected function showWorkCardInfo(e:BlmEvent):void{
+				if(currentWorkCardBtn!=null)
+					currentWorkCardBtn.workCardName.selected=false;
+				currentWorkCardBtn=e.data as RepairItemWorkcardButton;	
+				currentWorkCard=currentWorkCardBtn.WorkCardObj; 
+				this.dispatchEvent(new BlmEvent(RepairEventType.REPAIR_ITEM_GETWORKCARD_BACK,currentWorkCardBtn));
+				//显示设备信息
+			}
+			//---------------------------------------------------------------------------------------	
+			
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+		<s:Animate id="anmiate" target="{workCardHGroup}" duration="100" >
+			<s:motionPaths>
+				<s:SimpleMotionPath id="smp" property="horizontalScrollPosition"/>
+			</s:motionPaths>
+		</s:Animate>
+	</fx:Declarations>
+	<s:Label id="equipLabel" text="{equipName}" x="10" verticalCenter="0"
+			 buttonMode="true" useHandCursor="true" textDecoration="underline"
+			 click="equipLabel_clickHandler(event)"/>
+	<s:Button id="shipLeftBtn" left="{equipLabel.width+20}" click="shipLeftBtn_clickHandler(event)" enabled="false"
+			  skinClass="com.boloomo.emop.component.button.skin.SubLeftBtnSkin" verticalCenter="0"/>
+	<s:HGroup id="workCardHGroup" left="{equipLabel.width+50}" right="60" height="25" clipAndEnableScrolling="true"
+			  gap="4" verticalAlign="middle" verticalCenter="0">
+	</s:HGroup>
+	<s:Button id="shipRightBtn" right="35" width="20" click="shipRightBtn_clickHandler(event)" enabled="false"
+			  skinClass="com.boloomo.emop.component.button.skin.SubRightBtnSkin" verticalCenter="0"/>
+	<button:blmAddButton right="10" width="21" height="20" verticalCenter="0"
+						 click="blmaddbutton_clickHandler(event)"/>
+	
+</mx:Canvas>

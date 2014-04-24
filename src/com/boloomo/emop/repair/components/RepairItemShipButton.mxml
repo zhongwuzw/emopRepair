@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" xmlns:supportClasses="com.esri.ags.skins.supportClasses.*" height="22">
+	<s:layout>
+		<s:BasicLayout />
+	</s:layout>
+	<fx:Script>
+		<![CDATA[
+			import com.boloomo.emop.component.button.skin.blmAnnexDelButtonSkin;
+			import com.boloomo.emop.repair.type.ShipObject;
+			import com.boloomo.event.BlmEvent;
+			
+			import mx.events.ResizeEvent;
+			
+			public var shipObj:ShipObject = null;
+			public var shipID:String=null;
+			//给按钮赋值
+			public function annex_dataProvide(obj:ShipObject):void
+			{
+				shipObj = obj;
+				var str:String = obj.shipName;
+				shipName.toolTip = str;
+				shipName.label = str;
+				shipID=obj.shipId;
+			}
+			//删除
+			protected function delBtn_clickHandler(event:MouseEvent):void
+			{
+				this.dispatchEvent(new BlmEvent(RepairEventType.REPAIR_ITEM_DELETE_SHIP,this));//RepairItemPanel 删除船舶
+			}
+			//点击链接详情
+			protected function shipName_clickHandler(event:MouseEvent):void
+			{
+				this.dispatchEvent(new BlmEvent(RepairEventType.REPAIR_ITEM_SHOW_SHIP_INFO,this));
+			}
+			
+			protected function shipName_resizeHandler(event:ResizeEvent):void
+			{
+				var num:Number = shipName.width;
+				delBtn.left = num + 3;
+				this.width = num + 18;
+				//				this.dispatchEvent(new BlmEvent("button_resize"));
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<s:ToggleButton id="shipName" verticalCenter="0"
+					buttonMode="true" color="0x5B617D" textDecoration="underline" useHandCursor="true"
+					skinClass="com.boloomo.emop.repair.components.RepairItemLabelToggleButtonSkin"
+					resize="shipName_resizeHandler(event)"  
+					click="shipName_clickHandler(event)"/>
+	<s:Button id="delBtn" skinClass="com.boloomo.emop.component.button.skin.blmAnnexDelButtonSkin"  
+			  buttonMode="true" useHandCursor="true" bottom="2"
+			  click="delBtn_clickHandler(event)"/>
+</s:Group>

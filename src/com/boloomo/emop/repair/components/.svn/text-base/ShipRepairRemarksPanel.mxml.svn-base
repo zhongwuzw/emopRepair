@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009" 
+			   xmlns:s="library://ns.adobe.com/flex/spark" 
+			   xmlns:button="com.boloomo.emop.component.button.*"
+			   close="blmtitlewindow1_closeHandler(event)" 
+			   xmlns:mx="library://ns.adobe.com/flex/mx" 
+			   width="268" height="256" title="备注信息">
+	<s:layout>
+		<s:BasicLayout/>
+	</s:layout>
+
+	<fx:Script>
+		<![CDATA[
+			import mx.events.*;
+			protected function button1_clickHandler(event:MouseEvent):void
+			{
+				var obj:Object = new Object()
+				obj.text = advise.text;
+				obj.step = this.step;
+		//		this.dispatchEvent(new BlmEvent("check_opreater",obj));
+				this.visible = false;
+			}
+			
+			protected function blmtitlewindow1_closeHandler(event:CloseEvent):void
+			{
+				this.visible = false;
+			}
+			/**
+			 * 设置默认显示意见
+			 * */
+			public function defaultCheck(str:String):void
+			{
+				advise.text = str;	
+			}
+			
+			protected function button2_clickHandler(event:MouseEvent):void
+			{
+				this.visible = false;
+			}
+		]]>
+	</fx:Script>
+
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+		<fx:String id="step"></fx:String>
+	</fx:Declarations>
+	<s:Label text="备注：" left="10" top="12"/>
+	<s:TextArea id="advise" y="39" width="246" height="117" left="10"/>
+	<s:Button label="取消" click="button2_clickHandler(event)" width="50" right="12" bottom="20"/>
+	<s:Button x="142" label="确认" click="button1_clickHandler(event)" width="50" bottom="20"/>
+</s:TitleWindow>

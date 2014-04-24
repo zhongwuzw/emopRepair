@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" xmlns:supportClasses="com.esri.ags.skins.supportClasses.*" height="18">
+	<s:layout>
+		<s:BasicLayout />
+	</s:layout>
+	<fx:Script>
+		<![CDATA[
+			import com.boloomo.emop.component.button.skin.blmAnnexDelButtonSkin;
+			import com.boloomo.emop.repair.type.WorkCardObject;
+			import com.boloomo.event.BlmEvent;
+			
+			import mx.events.ResizeEvent;
+			
+			public var WorkCardObj:WorkCardObject = null;
+			public var WorkCardID:String=null;
+			//给按钮赋值
+			public function annex_dataProvide(obj:WorkCardObject):void
+			{
+				WorkCardObj=obj;
+				WorkCardID=obj.workCardId;
+				var realName:String=null;
+				if(obj.owner == "A02"){
+					realName = "大副" ;
+				}else if(obj.owner == "A03"){
+					realName = "二副" ;
+				}else if(obj.owner == "A04"){
+					realName = "三副" ;
+				}else if(obj.owner == "B01"){
+					realName = "轮机长" ;
+				}else if(obj.owner == "B02"){
+					realName = "大管轮" ;
+				}else if(obj.owner == "B03"){
+					realName = "二管轮" ;
+				}else if(obj.owner == "B04"){
+					realName = "三管轮" ;
+				}else if(obj.owner == "C01"){
+					realName = "电机员" ;
+				}
+				workCardName.toolTip = obj.level+" "+realName;
+				workCardName.label = obj.level+" "+realName;
+			}
+			//删除
+			protected function delBtn_clickHandler(event:MouseEvent):void
+			{
+				this.dispatchEvent(new BlmEvent(RepairEventType.REPAIR_ITEM_DELETE_WORKCARD,this));
+			}
+			//点击链接详情
+			protected function workCardName_clickHandler(event:MouseEvent):void
+			{
+				this.dispatchEvent(new BlmEvent(RepairEventType.REPAIR_ITEM_SHOW_WORKCARD_INFO,this));
+			}
+			
+			protected function workCardName_resizeHandler(event:ResizeEvent):void
+			{
+				var num:Number = workCardName.width;
+				delBtn.left = num + 3;
+				this.width = num + 18;
+				//				this.dispatchEvent(new BlmEvent("button_resize"));
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<s:ToggleButton id="workCardName"  verticalCenter="0"
+					buttonMode="true" color="0x5B617D" textDecoration="underline" useHandCursor="true"
+					skinClass="com.boloomo.emop.repair.components.RepairItemLabelToggleButtonSkin"
+					resize="workCardName_resizeHandler(event)"  
+					click="workCardName_clickHandler(event)"/>
+	<s:Button id="delBtn" skinClass="com.boloomo.emop.component.button.skin.blmAnnexDelButtonSkin"  
+			  buttonMode="true" useHandCursor="true" bottom="2"
+			  click="delBtn_clickHandler(event)"/>
+</s:Group>

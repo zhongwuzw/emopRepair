@@ -1,0 +1,453 @@
+<?xml version="1.0" encoding="utf-8"?>
+<titlewindow:blmTitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009" 
+							xmlns:s="library://ns.adobe.com/flex/spark" 
+							xmlns:mx="library://ns.adobe.com/flex/mx" 
+							xmlns:titlewindow="com.boloomo.emop.component.titlewindow.*" 
+							width="1024" height="500" title="添加修理单"
+							xmlns:annex="com.boloomo.emop.component.annex.*" 
+							xmlns:button="com.boloomo.emop.component.button.*"
+							color="0x637289"  close="blmtitlewindow1_closeHandler(event)"
+							creationComplete="blmtitlewindow1_creationCompleteHandler(event)"
+							xmlns:dropList="com.boloomo.emop.component.dropList.*" 
+							xmlns:dateChooser="com.boloomo.emop.component.dateChooser.*"
+							xmlns:upLoad="com.boloomo.emop.component.upLoad.*" 
+							xmlns:port="com.boloomo.emop.component.port.*" 
+							xmlns:RepairItem="com.boloomo.emop.repair.view.RepairItem.*" 
+							xmlns:process="com.boloomo.emop.repair.view.process.*">
+	<fx:Script>
+		<![CDATA[
+			import com.boloomo.common.Version;
+			import com.boloomo.emop.component.type.BlmDropListItemObject;
+			import com.boloomo.emop.repair.event.RepairListEvent;
+			import com.boloomo.emop.repair.model.RepairListMgModel;
+			import com.boloomo.emop.repair.type.ItemObj;
+			import com.boloomo.emop.repair.type.RepairOrderObject;
+			import com.boloomo.emop.repair.type.process.ProcessOpreateObject;
+			import com.boloomo.emop.repair.type.process.ProcessTaskObject;
+			import com.boloomo.emop.repair.util.ProcessInfo;
+			import com.boloomo.emop.repair.util.PurchaseUtil;
+			import com.boloomo.emop.repair.view.process.ProcessEventType;
+			import com.boloomo.emop.sparePurchase.type.PurchaseObject;
+			import com.boloomo.event.BlmEvent;
+			import com.boloomo.event.BlmEventManager;
+			import com.boloomo.util.AppUtil;
+			import com.boloomo.util.TimeUtil;
+			
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			
+			private var _detailObj:RepairOrderObject  = new RepairOrderObject();;
+			private var _typeVec:Vector.<BlmDropListItemObject> = null;
+			private var _departVec:Vector.<BlmDropListItemObject> = null;
+			private var _process:ProcessOpreateObject = new ProcessOpreateObject();										//操作对象
+			
+			
+			private var _shipId:String;
+			private var _shipName:String;
+			private var _auditPanel:AuditPanel = null;	
+			
+			[Embed (source="assets/arrow.png")]
+			[ Bindable ]
+			public var img:Class;
+	
+
+			public function get process():ProcessOpreateObject
+			{
+				return _process;
+			}
+
+			public function set process(value:ProcessOpreateObject):void
+			{
+				_process = value;
+			}
+
+			public function get shipName():String
+			{
+				return _shipName;
+			}
+
+			public function set shipName(value:String):void
+			{
+				_shipName = value;
+			}
+
+			public function get shipId():String
+			{
+				return _shipId;
+			}
+
+			public function set shipId(value:String):void
+			{
+				_shipId = value;
+			}
+
+			public function get departVec():Vector.<BlmDropListItemObject>
+			{
+				return _departVec;
+			}
+			
+			/**
+			 * @private
+			 */
+			public function set departVec(value:Vector.<BlmDropListItemObject>):void
+			{
+				_departVec = value;
+				depart.blm_resetContent(_departVec,0);
+			}
+			public function get detailObj():RepairOrderObject
+			{
+				return _detailObj;
+			}
+
+			public function set detailObj(value:RepairOrderObject):void
+			{
+				_detailObj = value;
+			}
+
+			protected function blmtitlewindow1_closeHandler(event:CloseEvent):void
+			{
+				var obj:Object = new Object();
+				obj.id = applyNo.text;
+				BlmEventManager.Instance.dispatchEvent(new BlmEvent(RepairListEvent.REPAIR_DELREPAIRLIST,obj));
+				this.visible = false;
+			}
+			protected function blmtitlewindow1_creationCompleteHandler(event:FlexEvent):void
+			{
+				process.taskId = "1";
+				process.stepId = "1";
+				process.status = 0;
+				
+				adate.blm_setDefaultDate(new Date());
+				bdate.blm_setDefaultDate(new Date());
+				fdate.blm_setDefaultDate(new Date());
+				rbdate.blm_setDefaultDate(new Date());
+				rfdate.blm_setDefaultDate(new Date());
+				maded.text = TimeUtil.getTimeStr(new Date,"YYYY-MM-DD");
+				
+				ship.text = shipName;
+				ldate.text = TimeUtil.getTimeStr(new Date,"YYYY-MM-DD");
+				lname.text = Version.Instance.uid;
+				reDate1.text = Math.round((fdate.blm_getSelectDate().time-bdate.blm_getSelectDate().time)/86400000+1)+"天";
+				reDate2.text =Math.round((rfdate.blm_getSelectDate().time-rbdate.blm_getSelectDate().time)/86400000+1)+"天";
+				aHead.text = Math.round((rbdate.blm_getSelectDate().time-bdate.blm_getSelectDate().time)/86400000)+"天";
+				saved.text = Math.round((fdate.blm_getSelectDate().time-rfdate.blm_getSelectDate().time)/86400000)+"天";
+				
+				workFlow.addEventListener(ProcessEventType.EMOP_PROCESS_OPREATE,onProcessHandler);
+				
+				
+			}
+			
+			public function onProcessHandler(e:BlmEvent):void
+			{
+				var obj:ProcessOpreateObject = e.data as ProcessOpreateObject;
+				if(_auditPanel == null || _auditPanel.visible == false)
+					_auditPanel = AuditPanel(PopUpManager.createPopUp(AppUtil.Instance.app,AuditPanel,true));
+				_auditPanel.visible = true;
+				_process = obj;
+				_auditPanel.addEventListener('confirm_remark_click',onAuditHandler);
+				PopUpManager.centerPopUp(_auditPanel);
+				PopUpManager.bringToFront(_auditPanel);
+			}
+			private function onAuditHandler(e:BlmEvent):void
+			{
+				var idea:String = e.data as String;
+				editAudit(idea);
+			}
+			//修改审核意见
+			private function editAudit(idea:String):void
+			{
+			//	this.refresh();
+			
+			 RepairListMgModel.Instance.changeState("seq15","",applyNo.text,process.stepId,process.stepId,1,idea);
+			 //PurchaseModel.Instance.reqAudit('apply',_applyObject.applyNo,0,_process.taskId,_process.stepId,_process.status,idea);
+			}
+
+			public function get typeVec():Vector.<BlmDropListItemObject>
+			{
+				return _typeVec;
+			}
+			public function set typeVec(value:Vector.<BlmDropListItemObject>):void
+			{
+				_typeVec = value;
+				typeVec.shift();
+				type.blm_resetContent(_typeVec,0);
+			}
+			protected function giveUpBtn_clickHandler(event:MouseEvent):void
+			{
+				var obj:Object = new Object();
+				obj.id = applyNo.text;
+				BlmEventManager.Instance.dispatchEvent(new BlmEvent(RepairListEvent.REPAIR_DELREPAIRLIST,obj));
+				this.visible = false;
+			}
+			public function setData(obj:ItemObj):void
+			{
+				detailObj.itemObj = obj;
+				RepItemId.text = obj.itemId;
+				RepItemName.text = obj.itemName;
+				content.text = obj.content;
+				var arr1:Array = obj.equipMap.getValues(); 
+				for(var i:int = 0;i<arr1.length;i++){
+					arr.addItem(arr1[i]);				
+				}
+			}
+			
+			public function refresh():void
+			{
+				var taskObj:ProcessTaskObject = ProcessInfo.Instance.taskObject(detailObj.proc);
+				var obj:Object;
+				if(_process.id == 1)
+				{
+					obj = PurchaseUtil.nextStep(_process.stepId,taskObj) as Object;	
+					detailObj.state = String(obj.status);
+					detailObj.link = obj.stepId;
+				}else if(_process.id == 2){
+					obj = PurchaseUtil.prevStep(_process.stepId,taskObj) as Object;
+					detailObj.state = String(obj.status);
+					detailObj.link = obj.stepId;
+				}else{
+					detailObj.state = '3';
+					detailObj.link = _process.stepId;
+				}
+				if(taskObj.stepVector.length.toString() == detailObj.link  && obj.status == 1){
+					if(parseInt(taskObj.taskId) <3){
+						detailObj.proc = (parseInt(taskObj.taskId)+1).toString();
+						detailObj.link = "1";
+						detailObj.state = "0";
+					}
+				}
+				if(detailObj.proc == "1"){
+					detailObj.procName="申请";
+					if(detailObj.link == "1"){
+						detailObj.linkName="编制";
+						if(detailObj.state == "0"){
+							detailObj.stateName = "未提交";
+						}
+						if(detailObj.state == "1"){
+							detailObj.stateName = "提交";
+						}
+					}
+					if(detailObj.link == "2"){
+						detailObj.linkName="船长确认";
+						if(detailObj.state == "0"){
+							detailObj.stateName = "待船长确认";
+						}
+						if(detailObj.state == "1"){
+							detailObj.stateName = "船长确认";
+						}
+					}
+				}
+				if(detailObj.proc == "2"){
+					detailObj.procName="批复";
+					if(detailObj.link == "2"){
+						detailObj.linkName="批复";
+						if(detailObj.state == "1"){
+							obj.stateName = "待批复";
+						}
+						if(detailObj.state == "2"){
+							obj.stateName = "已退回";
+						}
+						if(detailObj.state == "3"){
+							obj.stateName = "已作废";
+						}
+					}
+				}
+				if(detailObj.proc == "3"){
+					detailObj.procName="审核";
+					if(detailObj.link == "1"){
+						detailObj.linkName="审核";
+					}
+					if(detailObj.state == "1"){
+						detailObj.stateName = "待审核";
+					}
+					if(detailObj.state == "2"){
+						detailObj.stateName = "带派单";
+					}
+					if(detailObj.state == "3"){
+						detailObj.stateName = "已退回";
+					}
+					if(detailObj.state == "4"){
+						detailObj.stateName = "已作废";
+					}
+				}
+				this.setDefData(detailObj);
+			}
+
+
+			protected function saveBtn_clickHandler(event:MouseEvent):void
+			{
+				detailObj.applyId=applyNo.text;
+				detailObj.shipId = shipId;
+				detailObj.shipName = shipName;
+				detailObj.departId = depart.blm_selected().id;
+				detailObj.department = depart.blm_selected().label;
+				detailObj.type = type.blm_selected().id;
+				detailObj.typeName = type.blm_selected().label;
+				detailObj.proc = process.taskId;
+				detailObj.link = process.stepId;
+				detailObj.state = process.status.toString();
+				detailObj.self = parseInt(type.blm_selected().id);
+				detailObj.company = Builder1.text;
+				detailObj.location = repairPort1.input.text;
+				detailObj.lname = lname.text
+				detailObj.adate =  TimeUtil.getTimeStr(adate.blm_getSelectDate(),"YYYY-MM-DD");
+				detailObj.bdate =  TimeUtil.getTimeStr(bdate.blm_getSelectDate(),"YYYY-MM-DD");
+				detailObj.fdate =  TimeUtil.getTimeStr(fdate.blm_getSelectDate(),"YYYY-MM-DD");
+				detailObj.maded =  TimeUtil.getTimeStr(new Date(),"YYYY-MM-DD");
+				detailObj.rbdate = TimeUtil.getTimeStr(rbdate.blm_getSelectDate(),"YYYY-MM-DD");
+				detailObj.rfdate = TimeUtil.getTimeStr(rfdate.blm_getSelectDate(),"YYYY-MM-DD");  
+				detailObj.pland =  TimeUtil.getTimeStr(new Date(),"YYYY-MM-DD");
+				detailObj.pstate = "0";
+				detailObj.ldate = ldate.text;
+				detailObj.projectId = projectId.text;
+				 BlmEventManager.Instance.dispatchEvent(new BlmEvent(RepairListEvent.REPAIR_InsertRepairList,detailObj));
+				 BlmEventManager.Instance.dispatchEvent(new BlmEvent(RepairListEvent.REPAIR_SAVEREPAIRLIST,detailObj));
+			}
+
+			public function setDefData(obj:RepairOrderObject):void{
+				
+				if(obj == null)
+					return;
+				detailObj = obj;
+				workFlow.blm_setData(obj.proc,obj.link,int(obj.state));
+				task.text = obj.procName;
+				step.text = obj.linkName;
+				status.text = obj.stateName;
+			}
+			
+
+			protected function addList_clickHandler(event:MouseEvent):void
+			{
+				var obj:Object = new Object();
+				obj.shipid = shipId;
+				obj.type = "0";
+				BlmEventManager.Instance.dispatchEvent(new BlmEvent(RepairListEvent.REPAIR_SHOWPROJECTCODE,obj));
+			}
+
+
+			protected function rfdate_clickHandler(event:MouseEvent):void
+			{
+				reDate2.text = Math.round((rfdate.blm_getSelectDate().time-rbdate.blm_getSelectDate().time)/86400000+1)+"天";
+				
+			}
+
+
+			protected function fdate_clickHandler(event:MouseEvent):void
+			{
+				reDate1.text = String((fdate.blm_getSelectDate().secondsUTC-bdate.blm_getSelectDate().secondsUTC)/86400000+1)+"天";
+			}
+		]]>
+	</fx:Script>
+	<titlewindow:layout>
+		<s:BasicLayout/>
+	</titlewindow:layout>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+		<s:ArrayCollection id ="arr" />
+	</fx:Declarations>
+	<s:Group x="0" y="75" width="1022" height="246" visible="true">
+		<s:Label x="10" y="10" text="申请单号：" />
+		<s:Label id="applyNo" x="65" y="10" text=""/>
+		
+		<s:Label x="200" y="10" text="船舶："/>
+		<s:Label id="ship" x="242" y="10" text="新厦门"/>
+		
+		<s:Label x="350" y="10" text="部门："/>
+		<dropList:BlmDropListButton id="depart" x="382" y="10"/>
+		
+		<s:Label x="500" y="10" text="类别:"/>
+		<dropList:BlmDropListButton id="type" x="535" y="10"/>
+		
+		<s:Label x="640" y="10" text="流程："/>
+		<s:Label id="task" x="670" y="10" text="申请"/>
+		
+		<s:Label x="780" y="10" text="环节："/>
+		<s:Label id="step" x="810" y="10" text="申请"/>
+		
+		<s:Label x="900" y="10" text="状态："/>
+		<s:Label id="status" x="930" y="10" text="未提交"/>
+		
+		<s:Label x="10" y="35" text="修理港口:"/>
+		<port:PortSearchPanel id="repairPort1" x="65" y="32"  width="70" />
+	<!--	<s:TextInput id="repairPort1" x="65" y="32"  width="70" />-->
+		
+		<s:Label x="10" y="62" text="计划:"/>
+		<dateChooser:BlmDateSingleButton x="64" y="65" id="bdate" click="fdate_clickHandler(event)"  />
+		<s:Image source="{img}"  x="160" y="70"/>
+		<dateChooser:BlmDateSingleButton  x="205" y="65" id="fdate" click="fdate_clickHandler(event)" />
+		
+		<s:Label x="10" y="87" text="实际:"/>
+		<dateChooser:BlmDateSingleButton x="64" y="87" id="rbdate" click="rfdate_clickHandler(event)" />
+		<s:Image source="{img}"  x="160" y="93"/>
+		<dateChooser:BlmDateSingleButton  x="205" y="87" id="rfdate" click="rfdate_clickHandler(event)" />
+		
+		<s:Label x="10" y="115" text="工程单号:"/>
+		<s:TextInput x="63" y="115" id="projectId" text="" width="90"/>
+		
+		<s:Label x="10" y="140" text="修理项代码:"/>
+		<s:TextInput x="76" id="RepItemId" y="140" text="" width="80"/>
+		<button:blmAddButton id="addList" x="158" y="140" width="13" height="13" click="addList_clickHandler(event)" />
+		
+		
+		<s:Label x="188" y="138" text="修理项名称:"/>
+		<s:TextInput x="253" y="138" id="RepItemName" text=""/>
+		
+		
+		<s:Label x="162" y="117" text="编制日期:"/>
+		<s:Label x="213" y="117" id="maded" text=""/>
+		
+		<s:Label x="330" y="115" text="计划日期:"/>
+		<dateChooser:BlmDateSingleButton x="386" y="112" id="adate" />
+		
+		<s:Label x="501" y="110" text="状态:"/>
+		<s:Label x="537" y="110" text="" />
+	
+		<s:Label x="187" y="62" text=""/>
+		
+		<s:Label x="395" y="57" text="修期:"/>
+		<s:Label x="427" y="58" id="reDate1" text=""/>
+		
+		<s:Label x="499" y="57" text="提前:"/>
+		<s:Label x="530" y="58" id="aHead" text=""/>
+		
+		<s:Label x="395" y="89" text="修期:"/>
+		<s:Label x="430" y="90" id="reDate2" text=""/>
+		
+		<s:Label x="500" y="85" text="节省:"/>
+		<s:Label x="531" y="86" id="saved" text=""/>
+		
+		
+		
+		<s:Label x="156" y="36" text="施工单位:"/>
+		<s:TextInput id="Builder1" x="211" y="32" text="" width="90"/>
+		
+		<s:Label x="350" y="35" text="最后日期:"/>
+		<s:Label id="ldate" x="401" y="36" width="82" text=""/>
+		<s:Label x="499" y="35" text="最后操作人:"/>
+		<s:Label x="576" id="lname" y="35" text=""/>
+	
+		<s:Label x="10" y="163" text="修理项内容:"/>
+		
+		<s:TextArea id="content" x="78" y="165" text="" width="890" height="44" />
+		
+		
+		<s:Label x="10" y="214" text="附件："/>
+		<upLoad:EmopFileUpload id="fileUpload" x="47" y="208" width="900" height="32"/>
+		
+	</s:Group>
+	<process:ProcessPanel left="40" top="8" id="workFlow" visible="true" />
+	
+		<s:List id="eList" left="29" right="20" bottom="5" height="150" verticalScrollPolicy="auto"  horizontalScrollPolicy="off"
+				itemRenderer="com.boloomo.emop.repair.view.repairListManager.EquipsCardItemRender"
+				dataProvider="{arr}">
+			<s:layout>
+				<s:VerticalLayout id="ListLayout" horizontalAlign="left" gap="5" requestedRowCount="3"
+								  paddingTop="4" paddingBottom="4"/>
+			</s:layout> 
+		</s:List>
+	
+	<button:blmBookButton x="966" y="9" width="18" height="17"/>
+	
+	<button:blmSaveButton x="916" y="10" id="saveBtn" label="保存"  click="saveBtn_clickHandler(event)"  />
+	<button:blmCancelButton x="941" y="10" id="giveUpBtn" label="放弃" click="giveUpBtn_clickHandler(event)" />
+</titlewindow:blmTitleWindow>

@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<titlewindow:blmTitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009" 
+							xmlns:s="library://ns.adobe.com/flex/spark" 
+							xmlns:mx="library://ns.adobe.com/flex/mx" 
+							xmlns:titlewindow="com.boloomo.emop.component.titlewindow.*" 
+							width="200" height="150" title="完成" creationComplete="blmtitlewindow1_creationCompleteHandler(event)" 
+							close="blmtitlewindow1_closeHandler(event)" xmlns:dateChooser="com.boloomo.emop.component.dateChooser.*">
+	<fx:Script>
+		<![CDATA[
+			import com.boloomo.emop.repair.event.RepairListEvent;
+			import com.boloomo.event.BlmEvent;
+			import com.boloomo.event.BlmEventManager;
+			import com.boloomo.util.TimeUtil;
+			
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			private var _applyId:String;
+			private var _sDate:String;
+			private var _eDate:String;
+
+			public function get eDate():String
+			{
+				return _eDate;
+			}
+
+			public function set eDate(value:String):void
+			{
+				_eDate = value;
+			}
+
+			public function get sDate():String
+			{
+				return _sDate;
+			}
+
+			public function set sDate(value:String):void
+			{
+				_sDate = value;
+			}
+
+			public function get applyId():String
+			{
+				return _applyId;
+			}
+
+			public function set applyId(value:String):void
+			{
+				_applyId = value;
+			}
+
+			protected function blmtitlewindow1_closeHandler(event:CloseEvent):void
+			{
+				this.visible = false;
+			}
+
+
+			protected function finish_clickHandler(event:MouseEvent):void
+			{ 
+				var obj:Object = new Object;
+				obj.applyid = applyId;
+				obj.sDate = TimeUtil.getTimeStr(sDate1.blm_getSelectDate(),"YYYY-MM-DD");
+				obj.eDate = TimeUtil.getTimeStr(eDate1.blm_getSelectDate(),"YYYY-MM-DD");
+				BlmEventManager.Instance.dispatchEvent(new BlmEvent(RepairListEvent.REPAIR_FINISHREPAIRLIST,obj));
+			}
+			
+			public function strToDate(str:String):Date{
+				var arr:Array =new Array()
+				arr = str.split("-");
+				var date:Date = new Date();
+				if(arr.length >0){
+					date.fullYear = arr[0];
+					date.month = parseInt(arr[1])-1;
+					date.date = arr[2];
+				}
+				return date;
+			}
+
+			protected function blmtitlewindow1_creationCompleteHandler(event:FlexEvent):void
+			{
+				sDate1.blm_setDefaultDate(strToDate(sDate));
+				eDate1.blm_setDefaultDate(strToDate(eDate));
+			}
+
+		]]>
+	</fx:Script>
+	<s:Button x="124" y="85" label="完成" width="57" id="finish" click="finish_clickHandler(event)"/>
+	<s:Label x="11" y="19" text="开始日期:" />
+	<s:Label x="11" y="52" text="结束日期:" />
+	<dateChooser:BlmDateSingleButton left="73" id="sDate1" top="47" width="115"/>
+	<dateChooser:BlmDateSingleButton left="72" id="eDate1" top="15" width="115"/>
+	
+
+</titlewindow:blmTitleWindow>

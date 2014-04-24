@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="utf-8"?>
+<titlewindow:blmTitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009" 
+							xmlns:s="library://ns.adobe.com/flex/spark" 
+							xmlns:mx="library://ns.adobe.com/flex/mx" 
+							xmlns:titlewindow="com.boloomo.emop.component.titlewindow.*"
+							title="添加工作卡"
+							creationComplete="init(event)"
+							close="blmtitlewindow_closeHandler(event)"
+							width="300" height="300">
+	<fx:Script>
+		<![CDATA[
+			import com.boloomo.emop.component.type.BlmDropListItemObject;
+			import com.boloomo.emop.repair.model.RepairModel;
+			import com.boloomo.emop.repair.type.RepairItemWorkCardChooseObject;
+			import com.boloomo.emop.repair.type.WorkCardObject;
+			import com.boloomo.emop.userinfo.control.UserInfoControl;
+			import com.boloomo.event.BlmEvent;
+			import com.boloomo.util.maps.HashMap;
+			
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			
+			public var selectedWorkCards:HashMap=null;//已选择的工作卡
+			private var allWorkcards:HashMap=null;//左右的工作卡
+			private var itemID:String=null;
+			private var shipID:String=null;
+			private var equipID:String=null;
+			private var workcardID:String=null;
+			
+			/**
+			 * 关闭面板
+			 */ 
+			protected function blmtitlewindow_closeHandler(event:CloseEvent):void
+			{
+				// TODO Auto-generated method stub
+				PopUpManager.removePopUp(this);
+				this.visible=false;
+			}
+			/**
+			 * 初始化
+			 */ 
+			protected function init(event:FlexEvent):void
+			{
+				// TODO Auto-generated method stub
+				selectedWorkCards=new HashMap();
+			}
+			
+			//-------------------------------------------------------------------------------
+			/**
+			 * 设定已选工作卡
+			 */ 
+			public function initChosenWorkCards():void{
+				var selectcardArray:Array=selectedWorkCards.getValues();
+				while(selectcardArray.length>0){//设置工作卡的选择项
+					var tempWorkCard:WorkCardObject= selectcardArray.pop() as WorkCardObject;
+					for(var j:int=0;j<chosenWorkCardFlagArray.length;j++){
+						var WorkCardID:String=tempWorkCard.workCardId;
+						if(WorkCardID== (chosenWorkCardFlagArray.getItemAt(j) as RepairItemWorkCardChooseObject).workcardId)
+							(chosenWorkCardFlagArray.getItemAt(j) as RepairItemWorkCardChooseObject).chosenFlag=true;
+					}
+					
+				}				
+			}
+			/**
+			 * 获取当前工作卡的详细信息，用于申请删除、新增工作卡
+			 */ 
+			public function setInfo(itemid:String,shipID:String,equipID:String,chosenCards:HashMap):void{
+				this.itemID=itemid;
+				this.shipID=shipID;
+				this.equipID=equipID;
+				selectedWorkCards=chosenCards;
+			}
+			/**
+			 * 初始化，获取所有工作卡信息
+			 * 获取工作卡列表
+			 * 添加并显示数据
+			 */ 
+			public function getWorkCardList(temphash:HashMap):void{
+				allWorkcards=temphash;
+				var workcardArray:Array=allWorkcards.getValues();				
+				while(workcardArray.length>0){
+					var tempObj:WorkCardObject=workcardArray.pop() as WorkCardObject ;
+					Workcartds.addItem(tempObj);
+					
+					//添加选择数组
+					var WorkCardflag:RepairItemWorkCardChooseObject= new RepairItemWorkCardChooseObject();
+					WorkCardflag.workcardId		=tempObj.workCardId;
+					var realName:String=null;
+					if(tempObj.owner == "A02"){
+						realName = "大副" ;
+					}else if(tempObj.owner == "A03"){
+						realName = "二副" ;
+					}else if(tempObj.owner == "A04"){
+						realName = "三副" ;
+					}else if(tempObj.owner == "B01"){
+						realName = "轮机长" ;
+					}else if(tempObj.owner == "B02"){
+						realName = "大管轮" ;
+					}else if(tempObj.owner == "B03"){
+						realName = "二管轮" ;
+					}else if(tempObj.owner == "B04"){
+						realName = "三管轮" ;
+					}else if(tempObj.owner == "C01"){
+						realName = "电机员" ;
+					}
+					WorkCardflag.workcardName	=tempObj.level+" "+realName;
+					chosenWorkCardFlagArray.addItem(WorkCardflag);					
+				}
+				initChosenWorkCards();
+				Workcartds.refresh();
+				chosenWorkCardFlagArray.refresh();
+			}
+			
+			//----------------------------------------------------------
+			/**
+			 * 确定按钮
+			 * 提交修改
+			 */ 
+			protected function confirm_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				var j:int=0;
+				var addWorkCardVec:Vector.<WorkCardObject>=new Vector.<WorkCardObject>();
+				var delWorkCardVec:Vector.<WorkCardObject>=new Vector.<WorkCardObject>();
+				for(var i:int;i<chosenWorkCardFlagArray.length;i++){
+					var tempObj:RepairItemWorkCardChooseObject=chosenWorkCardFlagArray[i] as RepairItemWorkCardChooseObject;					
+					if(tempObj.chosenFlag==true && !selectedWorkCards.containsKey(tempObj.workcardId)){//新选中
+						for(j=0;j<Workcartds.length;j++){
+							if((Workcartds[j] as WorkCardObject).workCardId == tempObj.workcardId){
+								selectedWorkCards.put(tempObj.workcardId,(Workcartds[j] as WorkCardObject));
+								addWorkCardVec.push((Workcartds[j] as WorkCardObject));
+							}
+						}
+						
+					}
+					if(tempObj.chosenFlag==false && selectedWorkCards.containsKey(tempObj.workcardId)){//删除
+						for(j=0;j<Workcartds.length;j++){
+							if((Workcartds[j] as WorkCardObject).workCardId == tempObj.workcardId){
+								selectedWorkCards.remove(tempObj.workcardId);
+								delWorkCardVec.push((Workcartds[j] as WorkCardObject));
+							}
+						}
+						
+					}
+				}
+				if(addWorkCardVec.length>0)
+					RepairModel.Instance.reqAddDelWorkCard(this.itemID,1,this.shipID,this.equipID,addWorkCardVec);//添加
+//				//				RepairModel.Instance.reqAddDelShip(itemID,2,delshipVec);//删除
+				
+				//				this.dispatchEvent(new BlmEvent(RepairEventType.REPAIR_ITEM_SELECT_EDIT_SHIP,selectedWorkCards));
+				PopUpManager.removePopUp(this);
+				this.visible=false;
+			}
+			/**
+			 * checkbox点击处理事件
+			 * 添加到ArrayCollection中
+			 */ 
+			protected function SelectedcheckBox_ClickHandler(e:Event):void{
+				
+			}
+			/**
+			 * 取消按钮
+			 * 点击事件
+			 */ 
+			protected function cancel_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				PopUpManager.removePopUp(this);
+				this.visible=false;
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+		<s:ArrayCollection id="chosenWorkCardFlagArray"/>
+		<s:ArrayCollection id="Workcartds"/>
+	</fx:Declarations>
+	<s:Button id="confirm" right="110" bottom="10" label="确定"
+			  click="confirm_clickHandler(event)"/>
+	<s:Button id="cancel" right="20" bottom="10" label="取消"
+			  click="cancel_clickHandler(event)"/>
+
+	<mx:List id="workcardList" left="10" right="10" top="10" bottom="40" alternatingItemColors="[0xf9f6f6,0xd7e8fa]"
+			 dataProvider="{chosenWorkCardFlagArray}" horizontalScrollPolicy="auto" verticalScrollPolicy="auto">
+		<mx:itemRenderer>
+			<fx:Component>
+				<mx:HBox>
+					
+					<fx:Script>
+						<![CDATA[
+							import com.boloomo.event.BlmEvent;
+							
+							import mx.controls.CheckBox;
+							protected function checkbox_changeHandler(event:Event):void
+							{								
+								if((event.target as CheckBox).selected){
+									data.chosenFlag=true;
+								}else{
+									data.chosenFlag=false;
+								}
+							}
+						]]>
+					</fx:Script>
+					
+					<mx:CheckBox label="@{data.workcardName}" change="checkbox_changeHandler(event)" selected="@{data.chosenFlag}"/>
+				</mx:HBox>
+			</fx:Component>
+		</mx:itemRenderer>
+	</mx:List>
+</titlewindow:blmTitleWindow>

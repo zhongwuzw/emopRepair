@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<titlewindow:blmTitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009" 
+							xmlns:s="library://ns.adobe.com/flex/spark" 
+							xmlns:mx="library://ns.adobe.com/flex/mx" 
+							xmlns:titlewindow="com.boloomo.emop.component.titlewindow.*"
+							title="添加设备卡" creationComplete="blmtitlewindow1_creationCompleteHandler(event)"
+							close="blmtitlewindow1_closeHandler(event)"
+							width="250" height="138" xmlns:cwbt="com.boloomo.emop.component.cwbt.*">
+	<fx:Script>
+		<![CDATA[
+			import com.boloomo.emop.repair.event.RepairListEvent;
+			import com.boloomo.event.BlmEvent;
+			import com.boloomo.event.BlmEventManager;
+			
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			
+			private var _shipid:String;
+			private var _itemid:String;
+
+			public function get itemid():String
+			{
+				return _itemid;
+			}
+
+			public function set itemid(value:String):void
+			{
+				_itemid = value;
+			}
+
+			public function get shipid():String
+			{
+				return _shipid;
+			}
+
+			public function set shipid(value:String):void
+			{
+				_shipid = value;
+			}
+
+			protected function blmtitlewindow1_creationCompleteHandler(event:FlexEvent):void
+			{
+				
+			}
+
+
+			protected function blmtitlewindow1_closeHandler(event:CloseEvent):void
+			{
+				this.visible = false;
+			}
+
+
+			protected function cancel_clickHandler(event:MouseEvent):void
+			{
+				this.visible = false;
+			}
+
+
+			protected function confirm_clickHandler(event:MouseEvent):void
+			{
+				var obj:Object = new Object();
+				obj.itemid = itemid;
+				obj.shipid = shipid;
+				obj.cwbt = cwbtId.CWBT;
+				BlmEventManager.Instance.dispatchEvent( new BlmEvent(RepairListEvent.REPAIR_REQCWBT,obj));
+				
+			}
+
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+	</fx:Declarations>
+	
+	<s:Button id="confirm" right="110" bottom="10" label="确定"
+			  click="confirm_clickHandler(event)"/>
+	<s:Button id="cancel" right="20" bottom="10" label="取消"
+			  click="cancel_clickHandler(event)"/>
+	<s:Label y="27" left="10" text="CWBT:"/>
+	<cwbt:CwbtPanel id="cwbtId" y="23" left="55" width="173" namer="cwbt" />
+</titlewindow:blmTitleWindow>

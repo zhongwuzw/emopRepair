@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" width="100" height="70" 
+		 creationComplete="group1_creationCompleteHandler(event)" xmlns:process="com.boloomo.emop.repair.view.process.*">
+	<fx:Script>
+		<![CDATA[
+			import com.boloomo.emop.repair.type.process.ProcessDetailObject;
+			import com.boloomo.emop.repair.type.process.ProcessStepObject;
+			import com.boloomo.emop.repair.type.process.ProcessTaskObject;
+			import com.boloomo.emop.repair.util.ProcessInfo;
+			import com.boloomo.emop.repair.util.ProcessUtil;
+			
+			import mx.events.FlexEvent;
+			
+			private var _taskId:String;
+			private var _stepId:String;
+			private var _status:int;
+			protected function group1_creationCompleteHandler(event:FlexEvent):void
+			{
+				
+			}
+			//设置参数
+			public function blm_setData(taskId:String,stepId:String,status:int):void
+			{
+				this._taskId = taskId;
+				this._stepId = stepId;
+				this._status = status;
+				init();
+			}
+			private function init():void
+			{
+				var taskObj:ProcessTaskObject = ProcessInfo.Instance.taskObject(_taskId);
+				var stepObj:ProcessStepObject = ProcessInfo.Instance.stepObject(_taskId,_stepId);
+				
+				var isExe:Boolean = false;
+				var statusId:int = 0;
+				if(stepObj.stepId < _stepId)
+				{
+					statusId = 1;
+					isExe = true;
+				}else if(stepObj.stepId == _stepId){
+					statusId = this._status;
+					isExe = true;
+				}else{
+					statusId = 0;
+					isExe = false;
+				}
+				
+				linkGroup.isExecute = isExe;
+				
+				var detailObj:ProcessDetailObject = ProcessUtil.getSingleWorkFlow(_taskId,_stepId,_status);
+				linkGroup.blm_setData(detailObj);
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:Group>
+		<process:LinkGroup id="linkGroup" />
+	</s:Group>
+</s:Group>

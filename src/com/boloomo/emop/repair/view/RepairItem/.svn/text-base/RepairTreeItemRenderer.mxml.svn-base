@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:MXTreeItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					  xmlns:s="library://ns.adobe.com/flex/spark" 
+					  xmlns:mx="library://ns.adobe.com/flex/mx"
+					  creationComplete="mxtreeitemrenderer_creationCompleteHandler(event)"
+					  dataChange="mxtreeitemrenderer_dataChangeHandler(event)">
+	<fx:Script>
+		<![CDATA[
+			import mx.events.FlexEvent;
+			[Bindable]
+			[Embed(source="assets/tree/root.png")]
+			private var one:Class;
+			[Bindable]
+			[Embed(source="assets/tree/two.png")]
+			private var two:Class;
+			
+			/**
+			 * 树 
+			 * 初始化 
+			 */ 
+			protected function mxtreeitemrenderer_creationCompleteHandler(event:FlexEvent):void
+			{
+				// TODO Auto-generated method stub
+				refreshImg();
+			}
+			
+			/**
+			 * 树
+			 * 变化
+			 */ 
+			protected function mxtreeitemrenderer_dataChangeHandler(event:FlexEvent):void
+			{
+				// TODO Auto-generated method stub
+				refreshImg();
+			}
+			
+			/**
+			 * 树
+			 * 刷新图标
+			 */ 
+			private function refreshImg():void{
+				var level:String=data.@level;
+				if(level=="1")
+					icon.source=one;
+				else if(level=="2")
+					icon.source=two;			
+			}
+					
+		]]>
+	</fx:Script>
+	<s:states>
+		<s:State name="normal" />            
+		<s:State name="hovered" />
+		<s:State name="selected" />
+	</s:states>
+	<s:HGroup left="0" right="0" top="0" bottom="0" verticalAlign="middle">
+		<s:Rect id="indentationSpacer" width="{treeListData.indent}" percentHeight="100" alpha="0">
+			<s:fill>
+				<s:SolidColor color="0xFFFFFF" />
+			</s:fill>
+		</s:Rect>
+		
+		<!--tree控件中的图标默认绑定系统图标，如果有喜欢图标只需要改变下source属性值-->
+		<s:Group id="disclosureGroup">
+			<s:BitmapImage source="{treeListData.disclosureIcon}" visible="{treeListData.hasChildren}" />
+		</s:Group>
+		
+		<!--tree 这 个就 是 我们 每 个 item 的 最左 边 的文 件 图标 ， 可以 动 态获 取 数据 的 图像URL-->
+		<s:BitmapImage id="icon" source="one"/>
+		
+		<!--tree控件中默认显示的文本-->
+		<s:Label id="labelField" text="{treeListData.label}" paddingTop="2"/>
+	</s:HGroup>
+</s:MXTreeItemRenderer>

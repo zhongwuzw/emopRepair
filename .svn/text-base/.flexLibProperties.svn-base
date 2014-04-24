@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<flexLibProperties includeAllClasses="true" useMultiPlatformConfig="false" version="3">
+  <includeClasses>
+    <classEntry path="com.boloomo.emop.repair.view.Skin.radioBtn.FactroyRadioBtnSkin"/>
+    <classEntry path="com.boloomo.emop.repair.model.RepairModel"/>
+    <classEntry path="RemarkEvent"/>
+    <classEntry path="com.boloomo.emop.repair.type.RepairCardInfoObject"/>
+    <classEntry path="com.boloomo.emop.repair.type.ProjectListItemObject"/>
+    <classEntry path="com.boloomo.emop.repair.view.test"/>
+    <classEntry path="com.boloomo.emop.repair.view.RepairItem.ShipUnitScrollGroup"/>
+    <classEntry path="RepairEvent"/>
+    <classEntry path="com.boloomo.emop.repair.view.RepairItem.shipUnitViewGroup"/>
+    <classEntry path="com.boloomo.emop.repair.view.RepairItem.RepairItemPanel"/>
+    <classEntry path="com.boloomo.emop.repair.view.RepairItem.RepairTreeItemRenderer"/>
+    <classEntry path="com.boloomo.emop.repair.view.RepairItem.TurbineListItem"/>
+    <classEntry path="com.boloomo.emop.repair.view.RepairItem.RepairAddShipPanel"/>
+    <classEntry path="com.boloomo.emop.repair.view.RepairItem.RepairSelectItemRenderer"/>
+    <classEntry path="com.boloomo.emop.repair.view.RepairItem.RepairAddTurbinePanel"/>
+    <classEntry path="com.boloomo.emop.repair.type.ApplyObject"/>
+  </includeClasses>
+  <includeResources/>
+  <namespaceManifests/>
+</flexLibProperties>

@@ -1,0 +1,356 @@
+<titlewindow:blmTitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009"  title="修船管理"
+							xmlns:s="library://ns.adobe.com/flex/spark"  
+							close="blmtitlewindow1_closeHandler(event)" 
+							creationComplete="blmtitlewindow1_creationCompleteHandler(event)"
+							xmlns:mx="library://ns.adobe.com/flex/mx" 
+							xmlns:titlewindow="com.boloomo.emop.component.titlewindow.*" width="1024" height="500" 
+							xmlns:view="com.boloomo.emop.repair.view.*" 
+							xmlns:dropList="com.boloomo.emop.component.dropList.*"
+							xmlns:layers="com.esri.ags.layers.*"
+							xmlns:RepairShopPlan="com.boloomo.emop.repair.view.RepairShopPlan.*" 
+							xmlns:button="com.boloomo.emop.component.button.*">
+	
+	<fx:Declarations>
+	</fx:Declarations>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.boloomo.emop.component.event.DropListEventType;
+			import com.boloomo.emop.component.type.BlmDropListItemObject;
+			import com.boloomo.emop.repair.event.RepairListEvent;
+			import com.boloomo.emop.repair.type.FactoryRepairObject;
+			import com.boloomo.event.BlmEvent;
+			import com.boloomo.event.BlmEventManager;
+			import com.boloomo.util.maps.HashMap;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			import mx.events.ListEvent;
+			import mx.managers.PopUpManager;
+			
+			import spark.core.NavigationUnit;
+			import spark.events.IndexChangeEvent;
+			
+			
+			private var index:int=-1; //显示List中 操作项的序号
+			[Bindable]
+			private var repairShipInfoList:ArrayCollection;
+			[Bindable]
+			private var projectListArray:ArrayCollection;
+			private var _currentDetail:Array;
+			private  var repairCard:FactoryRepairObject=new FactoryRepairObject();
+			private var _tmpShipName:String = null;
+			/**
+			 * 初始化界面
+			 */ 
+			protected function blmtitlewindow1_creationCompleteHandler(event:FlexEvent):void
+			{
+				repairShipDropBtn.addEventListener(DropListEventType.SELECT_ITEM,onShipChange);
+				repairDateDropBtn.addEventListener(DropListEventType.SELECT_ITEM,onDateChange);
+				repairStateDropBtn.addEventListener(DropListEventType.SELECT_ITEM,onStateChange);
+				repairList.addEventListener("deletecard",removeRepairCard);
+			}
+
+			/**
+			 * 初始化厂修卡数据
+			 */
+			public function 	 emop_data(array:Array):void
+			{
+				array.sortOn("factoryId",Array.NUMERIC);
+				repairShipInfoList=new ArrayCollection(array);	
+				calShipDroplist(array);
+				_currentDetail=array;
+				dataChange();
+			}
+			public function emop_cont(array:Array):void
+			{
+				repairShipInfoList=new ArrayCollection(array);	
+				
+			}
+			/**
+			 * 初始化工程单数据
+			 */
+			public function emop_list(tmpMap:HashMap,tmpName:String):void
+			{
+				_tmpShipName = tmpName;
+			
+				projectListArray = new ArrayCollection();
+				var tmpArrayCollection:ArrayCollection= new ArrayCollection(tmpMap.getValues());
+	
+				for(var i:int =0;i<tmpArrayCollection.length;i++)
+				{
+					
+					if(tmpArrayCollection[i].checkStatus=="0")
+					{
+						
+					}
+					else
+					{
+						projectListArray.addItem(tmpArrayCollection[i]);
+					}
+				}
+				
+			}
+			private function setShipName(oItem:Object,iCol:int):String
+			{
+				return _tmpShipName;
+				
+			}
+			 
+			/**
+			 * 根据数据返回下拉列表
+			 * */
+			private function calShipDroplist(arr:Array):void
+			{
+				
+				var temp_work:FactoryRepairObject,temp_drop:BlmDropListItemObject,returnObj:Object;
+				var dateVec:Vector.<BlmDropListItemObject> = new Vector.<BlmDropListItemObject>();
+				var shipVec:Vector.<BlmDropListItemObject> = new Vector.<BlmDropListItemObject>();
+				var stateVec:Vector.<BlmDropListItemObject> = new Vector.<BlmDropListItemObject>();
+				var shipMap:HashMap = new HashMap();
+				var dateMap:HashMap = new HashMap();
+				var stateMap:HashMap = new HashMap();
+				temp_drop = new BlmDropListItemObject();
+				temp_drop.id = "all_ship";
+				temp_drop.label = "所有船舶";
+				if(shipVec.length==0)
+					shipVec.push(temp_drop);
+				
+				temp_drop = new BlmDropListItemObject();
+				temp_drop.id = "all_year";
+				temp_drop.label = "所有年份";
+				if(dateVec.length==0)
+					dateVec.push(temp_drop);
+				
+				temp_drop = new BlmDropListItemObject();
+				temp_drop.id = "all_state"
+					temp_drop.label = "所有状态";
+					if(stateVec.length==0)
+						stateVec.push(temp_drop);
+					
+					
+				
+				temp_drop = null;
+				for(var i:int = 0;i < arr.length;i++)
+				{
+					temp_work = arr[i];
+					temp_drop = shipMap.getValue(temp_work.shipName);
+					
+					if(!temp_drop)
+					{
+						temp_drop = new BlmDropListItemObject();
+						
+						temp_drop.label = temp_work.shipName;
+						shipMap.put(temp_work.shipName,temp_drop);
+						shipVec.push(temp_drop);
+					}
+					
+					temp_drop = null;
+					if(temp_work.planIn!=null)
+					{
+						temp_drop = dateMap.getValue(temp_work.planIn.fullYear);
+						if(!temp_drop)
+							{
+							temp_drop = new BlmDropListItemObject();
+							temp_drop.label = temp_work.planIn.fullYear+"年";
+							dateMap.put(temp_work.planIn.fullYear,temp_drop);
+							dateVec.push(temp_drop);
+							}
+					}
+					temp_drop = null;
+					temp_drop = stateMap.getValue(temp_work.state);
+					if(temp_work.state!=null)
+					{
+					if(!temp_drop)
+					{
+						temp_drop = new BlmDropListItemObject();
+						temp_drop.id=temp_work.state.toString();
+						if(temp_work.state=="0")
+							temp_drop.label = "未开始";
+						if(temp_work.state=="1")
+							temp_drop.label = "修理中";
+						if(temp_work.state=="2")
+							temp_drop.label = "已完工";
+						stateMap.put(temp_work.state,temp_drop);
+						stateVec.push(temp_drop);
+					}
+					}
+					
+				}
+				repairShipDropBtn.blm_resetContent(shipVec,0);
+				repairDateDropBtn.blm_resetContent(dateVec,0);
+				repairStateDropBtn.blm_resetContent(stateVec,0);
+			}
+			
+			private function onShipChange(event:Event):void
+			{
+				dataChange();
+			}
+			private function onDateChange(event:Event):void
+			{
+				dataChange();
+			}
+			private function onStateChange(event:Event):void
+			{
+				dataChange();
+			}
+			private function dataChange():void
+			{
+				var ship:BlmDropListItemObject = repairShipDropBtn.blm_selected();
+				var date:BlmDropListItemObject = repairDateDropBtn.blm_selected();
+				var state:BlmDropListItemObject = repairStateDropBtn.blm_selected();
+				repairShipInfoList = new ArrayCollection();
+				for(var i:int = 0;i<_currentDetail.length;i++)
+				{
+					var temp:FactoryRepairObject = _currentDetail[i] as FactoryRepairObject;
+					if(temp.shipName!=ship.label&&ship.label!=""&&ship.id!="all_ship")
+					continue;
+					if(temp.planIn!=null)
+					{
+					if((temp.planIn.fullYear.toString()+"年")!=date.label&&date.label!=""&&date.id!="all_year")
+						continue;
+					}
+					if(temp.state!=state.id&&state.id!=""&&state.id!="all_state")
+						continue;
+					repairShipInfoList.addItem(temp);
+				}
+				if(repairShipInfoList.length>0)
+				BlmEventManager.Instance.dispatchEvent(new BlmEvent(RepairListEvent.REPAIR_REFFACTORYREPAIRLIST,repairShipInfoList[0]));
+				else
+					BlmEventManager.Instance.dispatchEvent(new BlmEvent(RepairListEvent.REPAIR_REFFACTORYREPAIRLIST,null));
+				
+			}
+			/**
+			 * 厂修卡删除响应事件
+			 * 删除List中的厂修卡
+			 */ 
+			public function removeRepairCard(e:Event):void{
+				var t:List=e.currentTarget as List;
+				index=t.selectedIndex;
+				Alert.show("确定删除该记录？","确认删除窗口", Alert.YES|Alert.NO, this, alertClickHandler);
+			}
+			/**
+			 * 确定删除厂修卡的提示窗口
+			 * 仅被 removeRepairCard()调用
+			 */ 
+			private function alertClickHandler(evt:CloseEvent):void {
+				if (evt.detail == Alert.YES) {
+					BlmEventManager.Instance.dispatchEvent(new BlmEvent(RepairListEvent.REPAIR_CONFIRMDELREPAIRCARD,repairList.selectedItem));
+					//dataChange();
+				}
+			}
+			
+			/**
+			 * 工程单表格  工程单编号的单击处理
+			 * 功能待添加
+			 */ 		
+			protected function DataGrid_itemClickHandler(event:ListEvent):void
+			{
+					delList.enabled = true;
+				
+			}
+			
+			/**
+			 * 点击处理事件
+			 * 添加厂修卡
+			 */ 
+			protected function addaRepairInfoBtn_clickHandler(event:MouseEvent):void
+			{
+				repairCard.clear();
+				repairCard.status="1";
+				repairCard.state="0";
+				repairShipInfoList.addItemAt(repairCard,0);
+				
+
+				UpdataToBottom();
+
+			}
+			/**
+			 * 实现List添加数据时滚动到最下面（只供addaRepairInfoBtn_clickHandler调用）
+			 * 使用calllater不能解决时延问题，只能用循环解决
+			 * Notice that there is a loop that possibly validates the List up to 10 times. 
+			 * This is because sometimes we may need to scroll several times in virtual layout 
+			 * as some items may not be loaded yet and their size is only estimated.
+			 */ 
+			private function UpdataToBottom():void{
+				var delta:Number = 0;
+				var count:int = 0;	
+				while (count++ < 10){
+					repairList.validateNow();
+					delta= repairList.layout.getVerticalScrollPositionDelta(NavigationUnit.END);
+					repairList.layout.verticalScrollPosition -= delta;				
+					trace(delta);
+					if (delta == 3)
+						break;
+				}//while
+				
+				repairList.selectedIndex=repairShipInfoList.length-1;
+			}
+			
+
+			
+
+			protected function blmtitlewindow1_closeHandler(event:CloseEvent):void
+			{
+				PopUpManager.removePopUp(this);
+				this.visible = false;
+			}
+
+			protected function repairList_changeHandler(event:IndexChangeEvent):void
+			{
+				
+				BlmEventManager.Instance.dispatchEvent(new BlmEvent(RepairListEvent.REPAIR_REFFACTORYREPAIRLIST,repairList.selectedItem));
+				
+			}
+
+			protected function addList_clickHandler(event:MouseEvent):void
+			{
+				BlmEventManager.Instance.dispatchEvent(new BlmEvent(RepairListEvent.REPAIR_SHOWADDLISTPANEL));
+			}
+
+
+			protected function delList_clickHandler(event:MouseEvent):void
+			{
+				BlmEventManager.Instance.dispatchEvent(new BlmEvent(RepairListEvent.REPAIR_DELFACTORYLIST,ProjectDataGrid.selectedItem));
+				delList.enabled = false;
+			}
+
+		]]>
+	</fx:Script>
+	<s:Group  width="1024" height="500" >
+		<dropList:BlmDropListButton id="repairShipDropBtn" left="10" top="10" width="100"/>
+		<dropList:BlmDropListButton id="repairDateDropBtn" left="140" top="10" width="100"/>
+		<dropList:BlmDropListButton id="repairStateDropBtn" left="270" top="10" width="100"/>
+		<button:blmAddButton id="addaRepairInfoBtn" right="10" top="10" width="45" label="+" click="addaRepairInfoBtn_clickHandler(event)"/>
+		<s:List id="repairList" left="10" right="10" top="35" height="230" verticalScrollPolicy="auto" horizontalScrollPolicy="off"
+			itemRenderer="com.boloomo.emop.repair.view.RepairShopPlan.RepairCardGroup"
+			labelField="company" change="repairList_changeHandler(event)"
+			dataProvider="{repairShipInfoList}"  >
+			<s:layout>
+				<s:VerticalLayout id="ListLayout" horizontalAlign="center" gap="5" requestedRowCount="3"
+								  paddingTop="4" paddingBottom="4"/>
+			</s:layout> 
+		</s:List>
+	
+	
+		<mx:DataGrid id="ProjectDataGrid" left="10" right="10" height="160" verticalScrollPolicy="auto"
+					 dataProvider="{projectListArray}" textAlign="center" verticalGridLines="false" 
+					 itemClick="DataGrid_itemClickHandler(event)" top="270"> 
+			<mx:columns> 
+				<mx:DataGridColumn headerText="船名" labelFunction="setShipName"  textAlign="center" itemRenderer="com.boloomo.emop.repair.view.RepairShopPlan.ShipNameItemRender"/> 			
+				<mx:DataGridColumn headerText="工程单编号" dataField="proid" textAlign="center" itemRenderer="com.boloomo.emop.repair.view.RepairShopPlan.ProIdItemRender" /> 			
+				<mx:DataGridColumn headerText="开始日期"  textAlign="center" itemRenderer="com.boloomo.emop.repair.view.RepairShopPlan.BeginDateItemRender"/> 		
+				<mx:DataGridColumn headerText="完工日期"  textAlign="center" itemRenderer="com.boloomo.emop.repair.view.RepairShopPlan.FinishDateItemRender"/>
+			</mx:columns>	
+		</mx:DataGrid>
+		
+		<s:Group width="1022" height="30" x="0" bottom="30">
+			<button:blmAddButton id="addList" x="12" y="8" width="13" height="13"  click="addList_clickHandler(event)" visible="true" toolTip="添加工程单" />
+			<button:blmDeleteButton id="delList" y="8" x="37" width="13" height="13" click="delList_clickHandler(event)"  visible="true" enabled="false" toolTip="删除工程单"/>
+			<mx:VRule x="30" y="8" height="13" width="1"/>
+		</s:Group>
+	</s:Group>
+	
+</titlewindow:blmTitleWindow>

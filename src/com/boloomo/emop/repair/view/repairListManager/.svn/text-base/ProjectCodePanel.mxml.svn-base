@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<titlewindow:blmTitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009" 
+							xmlns:s="library://ns.adobe.com/flex/spark" 
+							xmlns:mx="library://ns.adobe.com/flex/mx" 
+							xmlns:titlewindow="com.boloomo.emop.component.titlewindow.*" 
+							width="314" height="438" title="修理项信息" close="blmtitlewindow1_closeHandler(event)" >
+	<fx:Script>
+		<![CDATA[
+			import com.boloomo.emop.repair.event.RepairListEvent;
+			import com.boloomo.emop.repair.type.ItemObj;
+			import com.boloomo.event.BlmEvent;
+			import com.boloomo.event.BlmEventManager;
+			
+			import mx.events.CloseEvent;
+			
+			private var _type:String;
+
+			public function get type():String
+			{
+				return _type;
+			}
+
+			public function set type(value:String):void
+			{
+				_type = value;
+			}
+
+			protected function blmtitlewindow1_closeHandler(event:CloseEvent):void
+			{
+				this.visible = false;
+			}
+
+
+			protected function button1_clickHandler(event:MouseEvent):void
+			{
+				this.visible = false;
+			}
+
+			public function setData(data:ArrayCollection):void{
+				this.arr = data	;
+				arr.refresh();
+			}
+			protected function button2_clickHandler(event:MouseEvent):void
+			{
+				if(repair.selectedIndex != -1){
+					var obj:Object = new Object();
+					var item:ItemObj = new ItemObj();
+					item = repair.selectedItem as ItemObj;
+					obj.itemId = item.itemId;
+					obj.type = type;
+					BlmEventManager.Instance.dispatchEvent(new BlmEvent(RepairListEvent.REPAIR_ADDPROJECTINFO,obj));
+				}
+			}
+
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<s:ArrayCollection id="arr"/>
+	</fx:Declarations>
+	<mx:DataGrid x="0" y="0" width="312" height="371" textAlign="center" id="repair"  dragEnabled="false" dataProvider="{arr}"  horizontalScrollPolicy="auto">
+		<mx:columns>
+			<mx:DataGridColumn headerText="修理项代码" dataField="itemId" width="100"/>
+			<mx:DataGridColumn headerText="修理项名称" dataField="itemName" textAlign="left" />
+		</mx:columns>
+	</mx:DataGrid>
+	<s:Button x="161" y="379" label="确认" click="button2_clickHandler(event)"/>
+	<s:Button x="239" y="379" label="取消" click="button1_clickHandler(event)"/>
+
+	
+	
+</titlewindow:blmTitleWindow>

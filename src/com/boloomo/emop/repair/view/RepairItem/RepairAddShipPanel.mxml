@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8"?>
+<titlewindow:blmTitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009" 
+							xmlns:s="library://ns.adobe.com/flex/spark" 
+							xmlns:mx="library://ns.adobe.com/flex/mx" 
+							xmlns:titlewindow="com.boloomo.emop.component.titlewindow.*"
+							title="添加船舶"
+							creationComplete="blmtitlewindow_creationCompleteHandler(event)"
+							close="blmtitlewindow_closeHandler(event)"
+							width="300" height="300">
+	<fx:Script>
+		<![CDATA[
+			import com.boloomo.emop.component.type.BlmDropListItemObject;
+			import com.boloomo.emop.repair.model.RepairModel;
+			import com.boloomo.emop.repair.type.RepairItemShipChooseObject;
+			import com.boloomo.emop.repair.type.ShipObject;
+			import com.boloomo.emop.userinfo.control.UserInfoControl;
+			import com.boloomo.event.BlmEvent;
+			import com.boloomo.util.maps.HashMap;
+			
+			import mx.collections.ArrayCollection;
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			
+			
+			public var selectedShips:HashMap=null;
+			private var itemID:String=null;
+			
+			protected function blmtitlewindow_closeHandler(event:CloseEvent):void
+			{
+				// TODO Auto-generated method stub
+				PopUpManager.removePopUp(this);
+				this.visible=false;
+			}
+			
+			protected function blmtitlewindow_creationCompleteHandler(event:FlexEvent):void
+			{								
+				selectedShips=new HashMap();
+				var shipVec:Vector.<BlmDropListItemObject> = UserInfoControl.Instance.userShipList() as Vector.<BlmDropListItemObject>;				
+				while(shipVec.length){
+					var shipObj:ShipObject= new ShipObject();
+					var tempObj:BlmDropListItemObject=shipVec.pop() as BlmDropListItemObject ;
+					shipObj.shipId=tempObj.id;
+					shipObj.shipName=tempObj.label;
+					Ships.addItem(shipObj);
+					
+					//添加选择数组
+					var shipflag:RepairItemShipChooseObject= new RepairItemShipChooseObject();
+					shipflag.shipId=tempObj.id;
+					shipflag.shipName=tempObj.label;
+					chosenShipFlagArray.addItem(shipflag);
+					
+				}
+				Ships.refresh();
+				chosenShipFlagArray.refresh();
+				//------------------添加监听---------------------------
+				this.addEventListener(RepairEventType.REPAIR_ITEM_CHOSEN_ADD_SHIP,initChosenShips);
+				
+				
+			}
+			
+			/**
+			 * 初始化
+			 * 设定已选船舶
+			 */ 
+			protected function initChosenShips(e:BlmEvent):void{
+				selectedShips=e.data as HashMap;
+				var selectshipArray:Array=selectedShips.getValues();
+				while(selectshipArray.length>0){
+					var tempShip:ShipObject= selectshipArray.pop() as ShipObject;
+					for(var j:int=0;j<chosenShipFlagArray.length;j++){
+						var ShipID:String=tempShip.shipId;
+						if(ShipID== (chosenShipFlagArray.getItemAt(j) as RepairItemShipChooseObject).shipId)
+							(chosenShipFlagArray.getItemAt(j) as RepairItemShipChooseObject).chosenFlag=true;
+					}
+					
+				}
+				
+			}		
+			/**
+			 * 获取当前修理项的ItemID
+			 */ 
+			public function getItemID(itemid:String):void{
+				this.itemID=itemid;
+			}
+			
+			/**
+			 * 确定按钮
+			 * 点击事件处理
+			 */ 
+			protected function confirm_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+	//			selectedShips.clear();
+				var j:int;
+				var addshipVec:Vector.<ShipObject>=new Vector.<ShipObject>();
+				var delshipVec:Vector.<ShipObject>=new Vector.<ShipObject>();
+				for(var i:int;i<chosenShipFlagArray.length;i++){
+					var tempObj:RepairItemShipChooseObject=chosenShipFlagArray[i] as RepairItemShipChooseObject;					
+					if(tempObj.chosenFlag==true && !selectedShips.containsKey(tempObj.shipId)){//新选中
+						for(j=0;j<Ships.length;j++){
+							if((Ships[j] as ShipObject).shipId == tempObj.shipId){
+								selectedShips.put(tempObj.shipId,(Ships[j] as ShipObject));
+								addshipVec.push((Ships[j] as ShipObject));
+							}
+						}
+						
+					}
+					if(tempObj.chosenFlag==false && selectedShips.containsKey(tempObj.shipId)){//删除
+						for(j=0;j<Ships.length;j++){
+							if((Ships[j] as ShipObject).shipId == tempObj.shipId){
+								selectedShips.remove(tempObj.shipId);
+								delshipVec.push((Ships[j] as ShipObject));
+							}
+						}
+						
+					}
+				}
+				RepairModel.Instance.reqAddDelShip(itemID,1,addshipVec);//添加
+//				RepairModel.Instance.reqAddDelShip(itemID,2,delshipVec);//删除
+								
+//				this.dispatchEvent(new BlmEvent(RepairEventType.REPAIR_ITEM_SELECT_EDIT_SHIP,selectedShips));
+				PopUpManager.removePopUp(this);
+				this.visible=false;
+			}
+			/**
+			 * 取消按钮
+			 * 关闭窗口
+			 */ 
+			protected function cancel_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				PopUpManager.removePopUp(this);
+				this.visible=false;
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->	
+		<s:ArrayCollection id="Ships"/>
+		<s:ArrayCollection id="chosenShipFlagArray"/>
+	</fx:Declarations>
+	<s:Button id="confirm" right="90" bottom="10" label="确定" click="confirm_clickHandler(event)"/>
+	<s:Button id="cancel" right="20" bottom="10" label="取消" click="cancel_clickHandler(event)"/>
+	<mx:List id="shipList" left="10" right="10" top="10" bottom="40" alternatingItemColors="[0xf9f6f6,0xd7e8fa]"
+			 dataProvider="{chosenShipFlagArray}" horizontalScrollPolicy="auto"
+			 verticalScrollPolicy="auto">
+		<mx:itemRenderer>
+			<fx:Component>
+				<mx:HBox>
+					
+					<fx:Script>
+						<![CDATA[
+							import com.boloomo.event.BlmEvent;
+							
+							import mx.controls.CheckBox;
+							protected function checkbox_changeHandler(event:Event):void
+							{								
+								if((event.target as CheckBox).selected){
+									data.chosenFlag=true;
+								}else{
+									data.chosenFlag=false;
+								}
+							}
+						]]>
+					</fx:Script>
+					
+					<mx:CheckBox label="@{data.shipName}" change="checkbox_changeHandler(event)" selected="@{data.chosenFlag}"/>
+				</mx:HBox>
+			</fx:Component>
+		</mx:itemRenderer>
+	</mx:List>
+</titlewindow:blmTitleWindow>

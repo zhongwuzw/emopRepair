@@ -1,0 +1,429 @@
+<?xml version="1.0" encoding="utf-8"?>
+<titlewindow:blmTitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009" 
+							xmlns:s="library://ns.adobe.com/flex/spark" 
+							xmlns:mx="library://ns.adobe.com/flex/mx" 
+							xmlns:titlewindow="com.boloomo.emop.component.titlewindow.*" 
+							width="1024" height="500" title="修理单管理"
+							xmlns:dropList="com.boloomo.emop.component.dropList.*" 
+							xmlns:button="com.boloomo.emop.component.button.*" 
+							xmlns:dropList2="com.boloomo.component.dropList.*"
+							creationComplete="initApp(event)"
+							close="blmtitlewindow1_closeHandler(event)">
+	<fx:Script>
+		<![CDATA[
+			import com.boloomo.common.Version;
+			import com.boloomo.emop.component.EmopVersion;
+			import com.boloomo.emop.component.event.DropListEventType;
+			import com.boloomo.emop.component.prompt.promrtWindow;
+			import com.boloomo.emop.component.type.BlmDropListItemObject;
+			import com.boloomo.emop.repair.control.RepairListManagerControl;
+			import com.boloomo.emop.repair.event.RepairListEvent;
+			import com.boloomo.emop.repair.type.process.ProcessStepObject;
+			import com.boloomo.emop.repair.type.process.ProcessTaskObject;
+			import com.boloomo.emop.sparePurchase.model.PurchaseModel;
+			import com.boloomo.emop.userinfo.control.UserInfoControl;
+			import com.boloomo.event.BlmEvent;
+			import com.boloomo.event.BlmEventManager;
+			import com.boloomo.util.maps.HashMap;
+			
+			import mx.collections.ArrayCollection;
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			
+			import spark.collections.Sort;
+			import spark.collections.SortField;
+			
+			[Bindable]
+			private var _dataProvider:ArrayCollection;
+			
+			
+			private var _emopShipId:String="";												//船端船舶ID
+			
+			private var _shipVec:Vector.<BlmDropListItemObject> = null;
+			private var _departVec:Vector.<BlmDropListItemObject> = null;
+			private var _typeVec:Vector.<BlmDropListItemObject> = null;
+			private var _taskVec:Vector.<BlmDropListItemObject> = null;
+			private var _stepVec:Vector.<BlmDropListItemObject> = null;
+			private var _statusVec:Vector.<BlmDropListItemObject> = null;
+						
+			private var _promrt:promrtWindow = null;										//提示信
+			
+			protected function initApp(event:FlexEvent):void
+			{
+				landList.addEventListener(DropListEventType.SELECT_ITEM,onShipChanger);
+				departList.addEventListener(DropListEventType.SELECT_ITEM,onDepartChanger);
+				typeList.addEventListener(DropListEventType.SELECT_ITEM,onTypeChanger);
+				taskList.addEventListener(DropListEventType.SELECT_ITEM,onTaskChanger);
+				stepList.addEventListener(DropListEventType.SELECT_ITEM,onStepChanger);
+				statusList.addEventListener(DropListEventType.SELECT_ITEM,onStatusChanger);
+				addList.visible = false;
+			}
+			
+			public function emop_data(vec:HashMap):void
+			{	arr.removeAll();
+				var sort:Sort=new Sort(); 
+				sort.fields=[new SortField("applyId")];  
+				var array:Array = new Array();
+					array = vec.getValues();
+				for(var i:int = 0;i < array.length;i++)
+				{
+					arr.addItem(array[i]);
+				}
+				arr.sort = sort;
+				arr.refresh();
+				total.text = "共"+ arr.length +"个";
+				_dataProvider = arr;
+			//	changeData();
+			}
+			public function freshData():void{
+				total.text = "共"+ arr.length +"个";
+			}
+	
+			/**
+			 * 双击显示信息
+			 * */
+			protected function applyGrid_doubleClickHandler(event:MouseEvent):void
+			{ 
+				var obj:Object = applyGrid.selectedItem;
+				BlmEventManager.Instance.dispatchEvent(new BlmEvent(RepairListEvent.Repair_showAppDetailsPanel,obj));
+				
+			}
+			
+			protected function blmtitlewindow1_closeHandler(event:CloseEvent):void
+			{
+				this.visible = false;
+			}
+			//船舶改变
+			private function onShipChanger(e:Event):void
+			{
+				var obj:BlmDropListItemObject = landList.blm_selected();
+				var shipId:String = obj.id as String;
+				var vec:Vector.<BlmDropListItemObject> = new Vector.<BlmDropListItemObject>();
+				var allObj:BlmDropListItemObject = new BlmDropListItemObject();
+				allObj.id = "";
+				allObj.label = "所有部门";
+				if(shipId != "")
+				{
+					vec = UserInfoControl.Instance.shipDeptList(obj.id) as Vector.<BlmDropListItemObject>;
+					departList.enabled = true;
+				}else{
+					departList.enabled = false;
+				}
+				if((vec.length>0 &&vec[0].id != "") || vec.length == 0)
+					vec.unshift(allObj);
+				_departVec = vec;
+				departList.blm_resetContent(vec,0);
+				if(landList.blm_selected().id == ""){
+					addList.visible = false;
+				}else{
+					addList.visible = true;
+				}
+				changeData();
+				
+			}
+			//部门改变
+			private function onDepartChanger(e:Event = null):void
+			{
+				var obj:BlmDropListItemObject = departList.blm_selected();
+				changeData();
+			}
+			//type改变
+			private function onTypeChanger(e:Event):void
+			{
+				var obj:BlmDropListItemObject = typeList.blm_selected();
+				var type:int = int(obj.id);
+				var vec:Vector.<BlmDropListItemObject> = new Vector.<BlmDropListItemObject>();
+				var taskVec:Vector.<ProcessTaskObject> = RepairListManagerControl.Instance.getTaskVector(type);
+				var temp:BlmDropListItemObject = new BlmDropListItemObject();
+				temp.id = "";
+				temp.label = "所有流程";
+				if(obj.id == ""){
+					taskList.enabled = false;
+					stepList.enabled = false;
+					statusList.enabled = false;
+				}else{
+					taskList.enabled = true;
+					vec = taskToVec(taskVec)
+					taskList.enabled = true;
+				}
+				if((vec.length>0 &&vec[0].id != "") || vec.length == 0)
+					vec.unshift(temp);
+				_taskVec = vec;
+				taskList.blm_resetContent(vec,0);
+				changeData();
+			}
+			
+			private function taskToVec(vec:Vector.<ProcessTaskObject>):Vector.<BlmDropListItemObject>
+			{
+				var blmVec:Vector.<BlmDropListItemObject> = new Vector.<BlmDropListItemObject>();
+				for(var i:int = 0;i < vec.length;i++)
+				{
+					var temp:BlmDropListItemObject = new BlmDropListItemObject();
+					temp.id = vec[i].taskId;
+					temp.label = vec[i].taskName;
+					temp.data = vec[i];
+					blmVec.push(temp);
+				}
+				return blmVec;
+			}
+			//task改变
+			private function onTaskChanger(e:Event):void
+			{
+				var data:BlmDropListItemObject = taskList.blm_selected();
+				var obj:ProcessTaskObject = (data.data as ProcessTaskObject);
+				var vec:Vector.<BlmDropListItemObject> = new Vector.<BlmDropListItemObject>();
+				var temp:BlmDropListItemObject = new BlmDropListItemObject();
+				temp.id = "";
+				temp.label = "所有环节";
+				if(data.id == "")
+				{
+					stepList.enabled = false;
+				}else{
+					vec = stepToVec(obj);
+					stepList.enabled = true;
+				}
+				if((vec.length>0 &&vec[0].id != "") || vec.length == 0)
+					vec.unshift(temp);
+				_stepVec = vec;
+				stepList.blm_resetContent(vec,0);
+				changeData();
+			}
+			
+			//step
+			private function onStepChanger(e:Event):void
+			{
+				var data:BlmDropListItemObject = stepList.blm_selected();
+				var obj:ProcessStepObject = data.data as ProcessStepObject;
+				var vec:Vector.<BlmDropListItemObject> = new Vector.<BlmDropListItemObject>();
+				var temp:BlmDropListItemObject = new BlmDropListItemObject();
+				temp.id = "";
+				temp.label = "所有状态";
+				if(data.id == "")
+				{
+					statusList.enabled = false;
+				}else{
+					vec = PurchaseModel.Instance.getStatus(obj.taskId,obj.stepId)
+					statusList.enabled = true;
+				}
+				if((vec.length>0 &&vec[0].id != "") || vec.length == 0)
+					vec.unshift(temp);
+				_statusVec = vec;
+				statusList.blm_resetContent(vec,0);
+				changeData();
+			}
+			
+			private function stepToVec(obj:ProcessTaskObject):Vector.<BlmDropListItemObject>
+			{
+				var vec:Vector.<BlmDropListItemObject> = new Vector.<BlmDropListItemObject>();
+				for(var i:int = 0;i < obj.stepVector.length;i++)
+				{
+					var temp:ProcessStepObject = obj.stepVector[i];
+					var tempList:BlmDropListItemObject = new BlmDropListItemObject();
+					tempList.id = temp.stepId;
+					tempList.label = temp.stepName;
+					tempList.data = temp;
+					vec.push(tempList);
+				}
+				vec.sort(sortList);
+				return vec;
+			}
+			//状态改变
+			private function onStatusChanger(e:Event):void
+			{
+				changeData();
+			}
+			//改变条件
+			public function changeData():void
+			{
+				var str:String = "";
+				var shipId:String = _emopShipId == str?landList.blm_selected().id:_emopShipId;
+				var departId:String = shipId == str?str: departList.blm_selected().id;
+				var taskId:String = taskList.blm_selected().id;
+				var stepId:String = taskId ==str?str:stepList.blm_selected().id;
+				var status:String = stepId == str?str:statusList.blm_selected().id;
+				var type:String = typeList.blm_selected().id;
+				RepairListManagerControl.Instance.secondData(shipId,departId,type,taskId,stepId,status);
+			}		
+			
+			public function onLandShip(shipId:String):void
+			{
+				landList.blm_selectId(shipId);
+				departList.enabled = true;
+				onDepartChanger();
+			}
+			private function closePromrt(e:BlmEvent):void
+			{
+				PopUpManager.removePopUp(_promrt);
+				_promrt.visible = false;
+			}
+			
+			private function sortList(a:BlmDropListItemObject,b:BlmDropListItemObject):int
+			{
+				if(a.id > b.id)
+					return 1;
+				else if(a.id == b.id)
+					return 0;
+				else
+					return -1;
+			}			
+			
+			/**
+			 * 船舶列表
+			 * */
+			public function get shipVec():Vector.<BlmDropListItemObject>
+			{
+				return _shipVec;
+			}
+			
+			/**
+			 * @private
+			 */
+			public function set shipVec(value:Vector.<BlmDropListItemObject>):void
+			{
+				_shipVec = value;
+				if(Version.Instance.name == EmopVersion.EMOP_VERSION_SHIP && _shipVec.length == 1)
+				{
+					shipLabel.visible = true;
+					landList.visible = false;
+					shipLabel.text = _shipVec[0].label;
+					_emopShipId = _shipVec[0].id;
+				}else{
+					shipLabel.visible = false;
+					landList.visible = true;
+					landList.blm_resetContent(_shipVec,0);
+					departList.enabled = false;
+				}
+			}
+			
+			/**
+			 * 部门列表
+			 * */
+			public function get departVec():Vector.<BlmDropListItemObject>
+			{
+				return _departVec;
+			}
+			
+			/**
+			 * @private
+			 */
+			public function set departVec(value:Vector.<BlmDropListItemObject>):void
+			{
+				_departVec = value;
+				departList.blm_resetContent(_departVec,0);
+			}
+			
+			/**
+			 * 流程
+			 * */
+			public function get taskVec():Vector.<BlmDropListItemObject>
+			{
+				return _taskVec;
+			}
+			
+			/**
+			 * @private
+			 */
+			public function set taskVec(value:Vector.<BlmDropListItemObject>):void
+			{
+				_taskVec = value;
+				taskList.blm_resetContent(_taskVec,0);
+			}
+			
+			public function get stepVec():Vector.<BlmDropListItemObject>
+			{
+				return _stepVec;
+			}
+			
+			public function set stepVec(value:Vector.<BlmDropListItemObject>):void
+			{
+				_stepVec = value;
+				stepList.blm_resetContent(_stepVec,0);
+				stepList.enabled = false;
+				statusList.enabled = false;
+			}
+			
+			public function get statusVec():Vector.<BlmDropListItemObject>
+			{
+				return _statusVec;
+			}
+			
+			public function set statusVec(value:Vector.<BlmDropListItemObject>):void
+			{
+				_statusVec = value;
+				statusList.enabled = false;
+				statusList.blm_resetContent(_statusVec,0);
+			}
+			
+			public function get emopShipId():String
+			{
+				return _emopShipId;
+			}
+			
+			public function set emopShipId(value:String):void
+			{
+				_emopShipId = value;
+			}
+			
+			public function get typeVec():Vector.<BlmDropListItemObject>
+			{
+				return _typeVec;
+			}
+			
+			public function set typeVec(value:Vector.<BlmDropListItemObject>):void
+			{
+				_typeVec = value;
+				typeList.blm_resetContent(_typeVec,0);
+				taskList.enabled = false;
+			}			
+
+			protected function addList_clickHandler(event:MouseEvent):void
+			{
+				var obj:Object = new Object();
+				obj.shipId = landList.blm_selected().id;
+				obj.shipName = landList.blm_selected().label;
+				BlmEventManager.Instance.dispatchEvent(new BlmEvent(RepairListEvent.REPAIR_ADDREPAIRLISTPANEL,obj));
+			}
+
+		]]>
+	</fx:Script>
+	<titlewindow:layout>
+		<s:BasicLayout/>
+	</titlewindow:layout>
+	<fx:Declarations>
+		<s:ArrayCollection id="arr"/>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:Group width="1022" height="35" x="0" y="0">
+		<s:Label id="shipLabel" x="42" y="12" visible="false" fontSize="14"/>
+		<dropList:BlmDropListButton id="landList" width="90" x="12" y="8"/>
+		<dropList:BlmDropListButton id="departList" width="90" x="112" y="8"/>
+		<dropList:BlmDropListButton id="typeList" width="90" x="212" y="8" />
+		<dropList:BlmDropListButton id="taskList" width="90" x="312" y="8"/>
+		<dropList:BlmDropListButton id="stepList" width="90" x="412" y="8"/>
+		<dropList:BlmDropListButton id="statusList" width="90" x="512" y="8"/>
+	</s:Group>
+	<s:Group width="1022" height="403" y="34" x="0">
+		<mx:DataGrid id="applyGrid" x="0" y="0" height="403" width="1022" dataProvider="{_dataProvider}"
+					 doubleClickEnabled="true" doubleClick="applyGrid_doubleClickHandler(event)" >
+			<mx:columns>
+				<mx:DataGridColumn headerText="申请单号" dataField="applyId" width="100" />
+				<mx:DataGridColumn headerText="船舶" dataField="shipName" />
+				<mx:DataGridColumn headerText="部门" dataField="department"/>
+				<mx:DataGridColumn headerText="类别" dataField="typeName"/>
+				<mx:DataGridColumn headerText="申请日期" dataField="adate"/>
+				<mx:DataGridColumn headerText="开始日期" dataField="bdate"/>
+				<mx:DataGridColumn headerText="结束日期" dataField="fdate"/>
+				<mx:DataGridColumn headerText="预计修期" dataField="eTime"/>
+				<mx:DataGridColumn headerText="修理港口" dataField="location"/>
+				<mx:DataGridColumn headerText="施工单位" dataField="company" itemRenderer="com.boloomo.emop.repair.view.repairListManager.RepairListCom" textAlign="left"/>
+				<mx:DataGridColumn headerText="流程" dataField="procName" />
+				<mx:DataGridColumn headerText="环节" dataField="linkName"/>
+				<mx:DataGridColumn headerText="状态" dataField="stateName"/>
+				<mx:DataGridColumn headerText="工程单号" dataField="projectId"  itemRenderer="com.boloomo.emop.repair.view.repairListManager.RepairListProject" textAlign="left" />
+			</mx:columns>
+		</mx:DataGrid>
+	</s:Group>
+	<button:blmAddButton id="addList" x="5" y="449" width="13" height="13" visible="true" click="addList_clickHandler(event)" />
+	<s:Label right="4" bottom="6" id="total" text="共10个" width="57"/>
+</titlewindow:blmTitleWindow>

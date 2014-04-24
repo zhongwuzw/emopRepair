@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" creationComplete="group1_creationCompleteHandler(event)"
+		 xmlns:supportClasses="com.esri.ags.skins.supportClasses.*"
+		 width="700" height="70">
+	<s:layout>
+		<s:BasicLayout />
+	</s:layout>
+	<fx:Script>
+		<![CDATA[
+			import com.boloomo.emop.repair.control.RepairListManagerControl;
+			import com.boloomo.emop.repair.type.process.*;
+			import com.boloomo.emop.repair.util.ProcessInfo;
+			import com.boloomo.emop.repair.util.ProcessUtil;
+			
+			import mx.events.FlexEvent;
+		
+			private var _taskId:String;							//流程ID
+			private var _stepId:String;							//环节ID
+			private var _status:int;								//状态
+			
+			private var _panelVector:Vector.<LinkGroup>;
+			private var _back:Boolean = false;
+			protected function group1_creationCompleteHandler(event:FlexEvent):void
+			{
+				
+			}
+			/**
+			 * 设置当前的流程，环节和状态
+			 * */
+			public function blm_setData(taskId:String,stepId:String,status:int):void
+			{
+				_taskId = taskId;
+				_stepId = stepId;
+				_status = status;
+				init();
+			}
+			private function init():void
+			{
+				hgroup.removeAllElements();
+				var taskObj:ProcessTaskObject =  ProcessInfo.Instance.taskObject(_taskId);
+				var vec:Vector.<ProcessStepObject> = taskObj.stepVector.sort(ProcessUtil.stepSort);
+				var panelVec:Vector.<LinkGroup> = new Vector.<LinkGroup>();
+				for(var i:int = 0;i < vec.length;i++)
+				{
+					var tempPanel:LinkGroup = new LinkGroup();
+					var temp:ProcessStepObject = vec[i];
+					var isExe:Boolean = false;
+					var statusId:int = 0;
+					if(temp.stepId < _stepId)
+					{
+						statusId = 1;
+						isExe = true;
+					}else if(temp.stepId == _stepId){
+						statusId = this._status;
+						isExe = true;
+					}else{
+						statusId = 0;
+						isExe = false;
+					}
+					
+					if(back)
+						tempPanel.isExecute = false;
+					else
+						tempPanel.isExecute = isExe;
+					
+					var detailObj:ProcessDetailObject = ProcessUtil.getWorkFlow(temp.taskId,temp.stepId,statusId);
+					panelVec.push(tempPanel);
+					hgroup.addElement(tempPanel);
+					tempPanel.blm_setData(detailObj);
+					
+					var arrBtn:ArrowButton = new ArrowButton();
+					if(i != (vec.length -1))
+						hgroup.addElement(arrBtn);
+				}
+				_panelVector = panelVec;
+			}
+			
+			/**
+			 * TaskId
+			 * */
+			public function get taskId():String
+			{
+				return _taskId;
+			}
+
+			/**
+			 * @private
+			 */
+			public function set taskId(value:String):void
+			{
+				_taskId = value;
+			}
+
+			public function get stepId():String
+			{
+				return _stepId;
+			}
+
+			public function set stepId(value:String):void
+			{
+				_stepId = value;
+			}
+
+			public function get status():int
+			{
+				return _status;
+			}
+
+			public function set status(value:int):void
+			{
+				_status = value;
+			}
+
+			public function get panelVector():Vector.<LinkGroup>
+			{
+				return _panelVector;
+			}
+
+			public function set panelVector(value:Vector.<LinkGroup>):void
+			{
+				_panelVector = value;
+			}
+
+			public function get back():Boolean
+			{
+				return _back;
+			}
+
+			public function set back(value:Boolean):void
+			{
+				_back = value;
+			}
+
+
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:HGroup id="hgroup" gap="2" />
+</s:Group>

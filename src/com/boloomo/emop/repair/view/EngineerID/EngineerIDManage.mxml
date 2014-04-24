@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="utf-8"?>
+<titlewindow:blmTitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009" 
+							xmlns:s="library://ns.adobe.com/flex/spark" 
+							xmlns:mx="library://ns.adobe.com/flex/mx" 
+							xmlns:titlewindow="com.boloomo.emop.component.titlewindow.*" 
+							width="1024" height="500"
+							xmlns:dropList="com.boloomo.emop.component.dropList.*" 
+							xmlns:button="com.boloomo.emop.component.button.*" 
+							xmlns:dropList2="com.boloomo.component.dropList.*"
+							title="工程单管理"
+							creationComplete="initApp(event)"
+							close="blmtitlewindow1_closeHandler(event)">
+	<fx:Script>
+		<![CDATA[
+			import com.boloomo.emop.component.event.DropListEventType;
+			import com.boloomo.emop.component.prompt.PromptEvent;
+			import com.boloomo.emop.component.prompt.promrtWindow;
+			import com.boloomo.emop.component.type.BlmDropListItemObject;
+			import com.boloomo.emop.repair.control.ProjectItemControl;
+			import com.boloomo.emop.repair.model.RepairModel;
+			import com.boloomo.emop.repair.type.ProjectOrderObject;
+			import com.boloomo.emop.userinfo.control.UserInfoControl;
+			import com.boloomo.event.BlmEvent;
+			import com.boloomo.event.BlmEventManager;
+			import com.boloomo.util.AppUtil;
+			
+			import mx.collections.ArrayCollection;
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			
+			[Bindable]
+			private var _dataProvider:ArrayCollection;
+			public static var shipID:String = new String();
+			private var _emopShipId:String="";												//船端船舶ID
+			
+			private var _data:Vector.<ProjectOrderObject> = null;
+			
+			private var _promrt:promrtWindow = null;		//提示信息框
+			
+			protected function initApp(event:FlexEvent):void
+			{
+				//创建下拉单的数据
+				var shipVec:Vector.<BlmDropListItemObject> = UserInfoControl.Instance.userShipList() as Vector.<BlmDropListItemObject>;
+				var shipObj:BlmDropListItemObject = new BlmDropListItemObject();
+				shipObj.id = "allShip";
+				shipObj.label = "所有船舶";
+				shipVec.unshift(shipObj);
+				if(shipVec != null)
+				{
+					shipAll.blm_resetContent(shipVec,0);
+					shipID = shipAll.blm_selected().id;
+				}
+				
+				var statesVec:Vector.<BlmDropListItemObject> = new Vector.<BlmDropListItemObject>();
+				
+				for(var i:int = 0;i <= 3;i++)
+				{
+					var statesObj:BlmDropListItemObject = new BlmDropListItemObject();
+					statesObj.id = String(i);
+					if(i == 3)
+					{
+						statesObj.label = "所有状态";
+						statesVec.unshift(statesObj);
+						break;
+					}
+					else if(i == 0)
+						statesObj.label = "未开始";
+					else if(i == 1)
+						statesObj.label = "施工中";
+					else if(i == 2)
+						statesObj.label = "已完工";
+					statesVec.push(statesObj);
+				}
+				statesAll.blm_resetContent(statesVec,0);
+				
+				var typeVec:Vector.<BlmDropListItemObject> = new Vector.<BlmDropListItemObject>();
+				
+				for(var k:int = 0;k <= 2;k++)
+				{
+					var typeObj:BlmDropListItemObject = new BlmDropListItemObject();
+					typeObj.id = String(k);
+					if(k == 2)
+					{
+						typeObj.label = "所有类型";
+						typeVec.unshift(typeObj);
+						break;
+					}
+					else if(k == 0)
+						typeObj.label = "厂修";
+					else if(k == 1)
+						typeObj.label = "航修";
+					typeVec.push(typeObj);
+				}
+				kindsAll.blm_resetContent(typeVec,0);
+				
+				
+//				var uid:String = Version.Instance.uid;
+				RepairModel.Instance.reqProjectOrder("admin");
+				
+				kindsAll.addEventListener(DropListEventType.SELECT_ITEM,onSearchChangeHandler);
+				shipAll.addEventListener(DropListEventType.SELECT_ITEM,onSearchChangeHandler);//由于没有数据，这个和下面那个的选择还没有实现
+				statesAll.addEventListener(DropListEventType.SELECT_ITEM,onSearchChangeHandler);
+			
+			}
+			
+			public function onSearchChangeHandler(e:Event):void
+			{
+				var shipRepairId:String = shipAll.blm_selected().id;
+				var stateId:String = statesAll.blm_selected().id;
+				var kindId:String = kindsAll.blm_selected().id;
+				ProjectItemControl.Instance.FilterLeftInfo(shipRepairId,stateId,kindId);
+			}
+			
+			/**
+			 * 双击显示信息
+			 * */
+			protected function applyGrid_doubleClickHandler(event:MouseEvent):void
+			{
+				var tempID:String = event.target.data.proId;
+				RepairModel.Instance.reqDetailProjectOrder(tempID);
+			//	var obj:ProjectOrderObject = event.target.data as ProjectOrderObject;
+			//	BlmEventManager.Instance.dispatchEvent(new BlmEvent(RepairEventType.EMOP_ENGINEER_ID,obj));
+			}
+			
+			protected function blmtitlewindow1_closeHandler(event:CloseEvent):void
+			{
+				PopUpManager.removePopUp(this);
+				this.visible = false;
+			}		
+			/**
+			 * 添加新订单
+			 * */
+			protected function addSpare_clickHandler(event:MouseEvent):void
+			{
+				BlmEventManager.Instance.dispatchEvent(new BlmEvent(RepairEventType.EMOP_ENGINEER_ID_ADD));
+				
+			}
+			/**
+			 * 删除订单
+			 * */
+			protected function delSpare_clickHandler(event:MouseEvent):void
+			{
+				if(_promrt == null || _promrt.visible == false)
+					_promrt = promrtWindow(PopUpManager.createPopUp(AppUtil.Instance.app,promrtWindow,true));
+				_promrt.visible = true;
+				_promrt.show(PromptEvent.DELALERT,"你确定要删除该工程单?");
+				_promrt.addEventListener("THISCONFIRM",onConfirmDelete);
+				_promrt.addEventListener("THISCANCEL",closePromrt);
+				_promrt.addEventListener("THISCLOSE",closePromrt);
+				PopUpManager.centerPopUp(_promrt);
+				PopUpManager.bringToFront(_promrt);	
+			}
+			
+			private function closePromrt(e:BlmEvent):void
+			{
+				PopUpManager.removePopUp(_promrt);
+				_promrt.visible = false;
+			}
+			private function onConfirmDelete(e:BlmEvent):void
+			{
+				var obj:ProjectOrderObject = table.selectedItem as ProjectOrderObject;
+			//	PurchaseControl.Instance.delApplyOrder(obj);
+			}
+
+			
+		]]>
+	</fx:Script>
+	<titlewindow:layout>
+		<s:BasicLayout/>
+	</titlewindow:layout>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+		<mx:ArrayCollection id="shipRepairList"/>
+	</fx:Declarations>
+	<s:Group width="1022" height="35" x="0" y="0">
+		<s:Label id="shipLabel" x="42" y="12" visible="false" fontSize="14"/>
+		<dropList:BlmDropListButton id="shipAll" width="90" x="12" y="8"/>
+		<dropList:BlmDropListButton id="statesAll" width="90" x="112" y="8"/>
+		<dropList:BlmDropListButton id="kindsAll" width="90" x="212" y="8" />
+	</s:Group>
+	<s:Group width="1022" height="380" y="34" x="0">
+		<mx:DataGrid id="table" x="0" y="0" height="380" width="1022"  dataProvider="{shipRepairList}"
+					 doubleClickEnabled="true" doubleClick="applyGrid_doubleClickHandler(event)">
+			<mx:columns>
+				<mx:DataGridColumn headerText="船名" dataField="shipName"/>
+				<mx:DataGridColumn headerText="工程单号" dataField="proId"/>
+				<mx:DataGridColumn headerText="状态" dataField="myState"/>
+				<mx:DataGridColumn headerText="修理类别" dataField="myType"/>
+				<mx:DataGridColumn headerText="修理地点" dataField="location"/>
+				<mx:DataGridColumn headerText="施工单位" dataField="company"/>
+				<mx:DataGridColumn headerText="开始日期" dataField="mypsday"/>
+				<mx:DataGridColumn headerText="结束日期" dataField="mypfday"/>
+				<mx:DataGridColumn headerText="厂修计划" dataField="facid" itemRenderer="com.boloomo.emop.repair.view.EngineerID.EngineerIDFactoryPlan"/> 
+			</mx:columns>
+		</mx:DataGrid>
+	</s:Group>
+	<s:Group width="1022" height="30" x="0" bottom="24">
+		<button:blmAddButton id="addSpare" x="12" y="8" width="13" height="13" click="addSpare_clickHandler(event)"  visible="true" toolTip="工程单申请" />
+		<mx:VRule x="30" y="8" height="13" width="1"/>
+	</s:Group>
+	<s:Label right="85" bottom="24" text="共"/>
+	<s:Label right="70" bottom="24" id="pagecount"/>
+	<s:Label right="53" bottom="24" text="个"/>
+</titlewindow:blmTitleWindow>

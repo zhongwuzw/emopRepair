@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:MXDataGridItemRenderer autoDrawBackground="false"  xmlns:fx="http://ns.adobe.com/mxml/2009" 
+						  xmlns:s="library://ns.adobe.com/flex/spark" 
+						  xmlns:mx="library://ns.adobe.com/flex/mx" 
+						  focusEnabled="true" width="80" >
+
+	<fx:Script>
+		<![CDATA[
+			
+			protected function linkBtn_clickHandler(event:MouseEvent):void
+			{
+				var obj:Object = new Object();
+				obj.projectId = data.projectId;   
+			//	BlmEventManager.Instance.dispatchEvent(new BlmEvent(RepairListEvent.REPAIR_SHOWCOMPANY,obj));
+			}
+
+		]]>
+	</fx:Script>
+
+	
+	<mx:LinkButton id="linkBtn" x="0" top="0" bottom="-1" width="108" label="{data.projectId}"
+				   click="linkBtn_clickHandler(event)" textAlign="left"
+				   textDecoration="underline"/>
+</s:MXDataGridItemRenderer>

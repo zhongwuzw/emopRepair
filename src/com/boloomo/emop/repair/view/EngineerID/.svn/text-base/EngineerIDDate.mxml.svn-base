@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009" 
+			   xmlns:s="library://ns.adobe.com/flex/spark" 
+			   xmlns:button="com.boloomo.emop.component.button.*"
+			   close="blmtitlewindow1_closeHandler(event)" 
+			   xmlns:mx="library://ns.adobe.com/flex/mx" 
+			   width="268" height="144" title="完成" xmlns:dateChooser="com.boloomo.emop.component.dateChooser.*">
+	<s:layout>
+		<s:BasicLayout/>
+	</s:layout>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.boloomo.emop.repair.control.ProjectItemControl;
+			import com.boloomo.emop.repair.type.ApplyObject;
+			import mx.events.*;
+			
+			public var obj:ApplyObject = null;
+			
+			protected function button1_clickHandler(event:MouseEvent):void
+			{
+/* 				var obj:Object = new Object()
+				obj.text = advise.text;
+				obj.step = this.step; */
+				//		this.dispatchEvent(new BlmEvent("check_opreater",obj));
+				ProjectItemControl.Instance.reqEngineerIDRepairFin(obj,startDate.blm_getSelectDate(),endDate.blm_getSelectDate());
+				this.visible = false;
+			}
+			
+			protected function blmtitlewindow1_closeHandler(event:CloseEvent):void
+			{
+				this.visible = false;
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+		<fx:String id="step"></fx:String>
+	</fx:Declarations>
+	<s:Label text="开始日期:" left="35" top="22"/>
+	<dateChooser:BlmDateSingleButton id="startDate" left="95" top="19"/>
+	<s:Label text="结束日期:" left="35" top="58"/>
+	<dateChooser:BlmDateSingleButton id="endDate" left="95" top="55"/>
+	<s:Button x="181" label="完成" click="button1_clickHandler(event)" width="50" bottom="8"/>
+</s:TitleWindow>

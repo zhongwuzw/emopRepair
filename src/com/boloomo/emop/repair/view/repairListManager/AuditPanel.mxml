@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<titlewindow:blmTitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009" 
+							xmlns:s="library://ns.adobe.com/flex/spark" creationComplete="blmtitlewindow1_creationCompleteHandler(event)" close="blmtitlewindow1_closeHandler(event)" 
+							xmlns:mx="library://ns.adobe.com/flex/mx" xmlns:titlewindow="com.boloomo.emop.component.titlewindow.*" xmlns:supportClasses="com.esri.ags.skins.supportClasses.*" width="272" height="212" title="备注信息" xmlns:button="com.boloomo.emop.component.button.*">
+	<fx:Script>
+		<![CDATA[
+			import com.boloomo.event.BlmEvent;
+			
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+
+			protected function blmtitlewindow1_creationCompleteHandler(event:FlexEvent):void
+			{
+				// TODO Auto-generated method stub
+			}
+			/**
+			 * 设置备注内容
+			 * */
+			public function content(str:String):void
+			{
+				remark.text = str;
+			}
+
+			protected function cancel_clickHandler(event:MouseEvent):void
+			{
+				remove();
+			}
+			
+			protected function confirm_clickHandler(event:MouseEvent):void
+			{
+				this.dispatchEvent(new BlmEvent("confirm_remark_click",remark.text));
+				remove();
+			}
+			protected function blmtitlewindow1_closeHandler(event:CloseEvent):void
+			{
+				remove();
+			}
+			private function remove():void
+			{
+				this.visible = false;
+				PopUpManager.removePopUp(this);
+			}
+
+		]]>
+	</fx:Script>
+	<titlewindow:layout>
+		<s:BasicLayout />
+	</titlewindow:layout>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:Label text="备注：" top="14"  x="11"/>
+	<s:TextArea id="remark" width="248" height="106"  x="12" y="32"/>
+	<s:Button  id="confirm" x="135" y="148"  buttonMode="true" label="确认" click="confirm_clickHandler(event)"/>
+	<s:Button  id="cancel" x="203" y="148" label="取消" buttonMode="true"  click="cancel_clickHandler(event)"/>
+	<!--
+	<s:Button id="confirm" x="155" y="148" width="50" label="确认"/>
+	<s:Button id="cancel" x="213" y="148" label="取消" width="45"/>
+	-->
+</titlewindow:blmTitleWindow>

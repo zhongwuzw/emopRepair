@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009" 
+			   xmlns:s="library://ns.adobe.com/flex/spark" 
+			   xmlns:button="com.boloomo.emop.component.button.*"
+			   close="blmtitlewindow1_closeHandler(event)" 
+			   xmlns:mx="library://ns.adobe.com/flex/mx" 
+			   width="329" height="276" title="厂修计划" xmlns:dateChooser="com.boloomo.emop.component.dateChooser.*">
+	<s:layout>
+		<s:BasicLayout/>
+	</s:layout>
+	
+	<fx:Script>
+		<![CDATA[
+			import mx.events.*;
+			
+			protected function blmtitlewindow1_closeHandler(event:CloseEvent):void
+			{
+				this.visible = false;
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:TextArea id="factoryPlan" left="15" top="43" width="300" height="150"/>
+</s:TitleWindow>

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<projectDescription>
+	<name>emopRepair</name>
+	<comment></comment>
+	<projects>
+	</projects>
+	<buildSpec>
+		<buildCommand>
+			<name>com.adobe.flexbuilder.project.flexbuilder</name>
+			<arguments>
+			</arguments>
+		</buildCommand>
+	</buildSpec>
+	<natures>
+		<nature>com.adobe.flexbuilder.project.flexlibnature</nature>
+		<nature>com.adobe.flexbuilder.project.actionscriptnature</nature>
+	</natures>
+	<linkedResources>
+		<link>
+			<name>[source path] repair</name>
+			<type>2</type>
+			<locationURI>DOCUMENTS/EMOP_Map_Plugin/global/repair</locationURI>
+		</link>
+		<link>
+			<name>[source path] tool</name>
+			<type>2</type>
+			<locationURI>DOCUMENTS/EMOP_Map_Plugin/global/tool</locationURI>
+		</link>
+	</linkedResources>
+</projectDescription>

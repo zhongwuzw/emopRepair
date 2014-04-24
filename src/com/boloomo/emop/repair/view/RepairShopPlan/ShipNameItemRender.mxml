@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:MXDataGridItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+						  xmlns:s="library://ns.adobe.com/flex/spark" 
+						  xmlns:mx="library://ns.adobe.com/flex/mx" 
+						  focusEnabled="true" dataChange="mxdatagriditemrenderer1_dataChangeHandler(event)" creationComplete="mxdatagriditemrenderer1_creationCompleteHandler(event)" >
+	<fx:Script>
+		<![CDATA[
+			import mx.events.FlexEvent;
+			[Embed(source='assets/image/state0.png')]
+			private var state0:Class;
+			[Embed(source='assets/image/state1.png')]
+			private var state1:Class;
+			[Embed(source='assets/image/state2.png')]
+			private var state2:Class;
+
+			protected function mxdatagriditemrenderer1_dataChangeHandler(event:FlexEvent):void
+			{
+				if(data.state=="0")
+					image.source=state0;
+				else if(data.state=="1")
+					image.source=state1;
+				else if(data.state=="2")
+					image.source=state2;
+				else
+					image.source=state0;
+				
+			}
+
+
+			protected function mxdatagriditemrenderer1_creationCompleteHandler(event:FlexEvent):void
+			{
+				if(data.state=="0")
+					image.source=state0;
+				else if(data.state=="1")
+					image.source=state1;
+				else if(data.state=="2")
+					image.source=state2;
+				else
+					image.source=state0;
+			}
+
+		]]>
+	</fx:Script>
+	<mx:Image id="image" source="@Embed('assets/image/state2.png')"  width="20" left="40"/>
+	<s:Label id="lblData" verticalCenter="0" horizontalCenter="0" text="{dataGridListData.label}" />
+</s:MXDataGridItemRenderer>

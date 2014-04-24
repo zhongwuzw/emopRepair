@@ -1,0 +1,114 @@
+<titlewindow:blmTitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009"  title="添加工程单"
+							xmlns:s="library://ns.adobe.com/flex/spark"  
+							xmlns:mx="library://ns.adobe.com/flex/mx"  width="220" height="250" 
+							xmlns:layers="com.esri.ags.layers.*" 
+							xmlns:titlewindow="com.boloomo.emop.component.titlewindow.*" 
+							close="blmtitlewindow1_closeHandler(event)"
+							creationComplete="blmtitlewindow1_creationCompleteHandler(event)"
+							xmlns:layout="flare.vis.operator.layout.*"
+							>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.boloomo.event.BlmEvent;
+			import com.boloomo.util.maps.HashMap;
+			
+			import mx.collections.ArrayCollection;
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			[Bindable]
+			private var contOrderArray:ArrayCollection;
+			private var _contPanel:AddContOrderPanel;
+			
+			
+			/**
+			 * 初始化工程单
+			 * */
+			public function emop_list(tmpMap:HashMap):void
+			{
+				//var tmpMap:HashMap=e.data as HashMap;
+//				_contPanel=AddContOrderPanel(PopUpManager.createPopUp(AppUtil.Instance.app,AddContOrderPanel,true));
+//				_contPanel.visible = true;
+//					PopUpManager.centerPopUp(_contPanel);
+//					PopUpManager.bringToFront(_contPanel);
+					
+				contOrderArray= new ArrayCollection(tmpMap.getValues());
+				
+			}
+			protected function blmtitlewindow1_closeHandler(event:CloseEvent):void
+			{
+				PopUpManager.removePopUp(this);
+				this.visible = false;
+			}
+			
+			
+			protected function blmtitlewindow1_creationCompleteHandler(event:FlexEvent):void
+			{
+				//BlmEventManager.Instance.addEventListener("contorder",emop_list);
+				var tmpArray:Array = new Array({flag:false,id:"1",na:"年检"},{flag:false,id:"2",na:"中间检"},{flag:false,id:"3",na:"锅炉检"},{flag:false,id:"4",na:"坞检"},{flag:false,id:"5",na:"桨轴检"},
+					{flag:false,id:"6",na:"特检"},{flag:false,id:"7",na:"监检"},{flag:false,id:"8",na:"水下探摸"},{flag:false,id:"9",na:"起货设备检验"},{flag:false,id:"10",na:"吊重试验"});
+				//contOrderArray= new ArrayCollection(tmpArray);
+			}
+			
+			
+			protected function confirmBtn_clickHandler(event:MouseEvent):void
+			{
+				PopUpManager.removePopUp(this);
+				this.visible = false;
+				var tmpArray:Array = new Array();
+				for(var i:int;i<contOrderArray.length;i++)
+				{
+					if(contOrderArray[i].flag)
+					{
+						tmpArray.push(contOrderArray[i]);
+					}
+					
+				}
+				this.dispatchEvent(new BlmEvent("contchange",tmpArray));
+			}
+			
+			
+			protected function cancelBtn_clickHandler(event:MouseEvent):void
+			{
+				PopUpManager.removePopUp(this);
+				this.visible = false;
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<mx:DataGrid id="ProjectDataGrid" left="10" right="10" height="160" verticalScrollPolicy="auto"
+				 dataProvider="{contOrderArray}" textAlign="center" verticalGridLines="false" 
+				 top="10"> 
+		<mx:columns> 
+			<mx:DataGridColumn width="42">
+				<mx:itemRenderer>
+					<fx:Component>
+						<mx:HBox horizontalAlign="center">
+							
+							<fx:Script>
+								<![CDATA[
+									protected function checkbox1_changeHandler(event:Event,obj:Object):void
+									{
+										obj.flag = CheckBox(event.target).selected;
+										
+									}
+								]]>
+							</fx:Script>
+							
+							<s:CheckBox selected="@{data.flag}" width="20" change="checkbox1_changeHandler(event,data)"/>
+						</mx:HBox>
+					</fx:Component>
+				</mx:itemRenderer>
+			</mx:DataGridColumn>
+			<mx:DataGridColumn headerText="检验id" dataField="id" textAlign="center" width="50"  /> 	
+			<mx:DataGridColumn headerText="检验名称" dataField="na" textAlign="center"  /> 			
+			
+		</mx:columns>	
+	</mx:DataGrid>
+	<s:Button id="confirmBtn" left="60" width="50" top="180" label="确认" click="confirmBtn_clickHandler(event)"/>
+	<s:Button id="cancelBtn" left="120" width="50" top="180" label="取消" click="cancelBtn_clickHandler(event)"/>
+</titlewindow:blmTitleWindow>

@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" creationComplete="group1_creationCompleteHandler(event)"
+		 xmlns:supportClasses="com.esri.ags.skins.supportClasses.*" width="50" height="70">
+	<s:layout>
+		<s:BasicLayout />
+	</s:layout>
+	<fx:Script>
+		<![CDATA[
+			import com.boloomo.emop.repair.type.process.*;
+			import com.boloomo.emop.repair.util.ProcessUtil;
+			import com.boloomo.event.BlmEvent;
+			import com.boloomo.util.AppUtil;
+			
+			import mx.collections.ArrayCollection;
+			import mx.events.FlexEvent;
+			
+			[Bindable]
+			private var _opreaterData:ArrayCollection = null;
+			private var _process:ProcessDetailObject = null;	 
+			private var _isExecute:Boolean = false;
+			
+			
+			protected function group1_creationCompleteHandler(event:FlexEvent):void
+			{
+				AppUtil.Instance.app.addEventListener(MouseEvent.CLICK,onMouseClickHandler);
+				this.parent.addEventListener(MouseEvent.CLICK,onMouseClickHandler);
+				this.parent.parent.addEventListener(MouseEvent.CLICK,onMouseClickHandler);
+				this.parent.parent.parent.addEventListener(MouseEvent.CLICK,onMouseClickHandler);
+				this.addEventListener(MouseEvent.CLICK,onMouseClickHandler);
+			}
+			//
+			public function onMouseClickHandler(e:MouseEvent = null):void
+			{
+				opGroup.visible = false;
+				e.stopPropagation();
+			}
+			/**
+			 * 设置内容
+			 * */
+			public function blm_setData(obj:ProcessDetailObject):void
+			{
+				_process = obj;	
+				if(_process == null)
+					return;
+				if(_isExecute)
+					linkBox.enabled = true;
+				else
+					linkBox.enabled = false;
+				
+				if(obj.status == 0 || obj.status == 2)
+				{
+					linkBox.selected = false;
+				}else if(obj.status == 1){
+					linkBox.selected = true;
+				}else if(obj.status == 3){
+					linkBox.enabled = false;
+				}
+				_opreaterData = new ArrayCollection();
+				for(var i:int = 0;i < obj.lister.length;i++)
+				{
+					_opreaterData.addItem(obj.lister[i]);
+				}
+				opreateList.height = _opreaterData.length*25;
+				linkBox.label = obj.statusName;
+				stepLabel.text = obj.stepName;
+				
+				
+			}		
+			//鼠标移入
+			protected function linkBox_mouseOverHandler(event:MouseEvent):void
+			{
+				var isRole:Boolean = ProcessUtil.getRole(_process.taskId,_process.stepId);
+				if((_process.status == 0 || _process.status == 2)&&isRole&&_isExecute)
+					clickBtn.visible = true;
+				else
+					clickBtn.visible = false;
+				event.stopPropagation();
+			}
+			//鼠标溢出
+			protected function linkBox_mouseOutHandler(event:MouseEvent):void
+			{
+				clickBtn.visible = false;
+				event.stopPropagation();
+			}
+			//显示操作
+			protected function clickBtn_clickHandler(event:MouseEvent):void
+			{
+				opGroup.visible = true;
+				opreateList.selectedIndex = -1;
+				event.stopPropagation();
+			}
+			//操作点击
+			protected function opreateList_clickHandler(event:MouseEvent):void
+			{
+				opGroup.visible = false;
+				var obj:ProcessOpreateObject = opreateList.selectedItem as ProcessOpreateObject;
+				this.parent.parent.dispatchEvent(new BlmEvent(ProcessEventType.EMOP_PROCESS_OPREATE,obj));
+			}
+/**********************************************/
+			/**
+			 * 操作详情
+			 * */
+			public function get process():ProcessDetailObject
+			{
+				return _process;
+			}
+
+			/**
+			 * @private
+			 */
+			public function set process(value:ProcessDetailObject):void
+			{
+				_process = value;
+			}
+
+			public function get isExecute():Boolean
+			{
+				return _isExecute;
+			}
+
+			public function set isExecute(value:Boolean):void
+			{
+				_isExecute = value;
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:Group mouseOver="linkBox_mouseOverHandler(event)" mouseOut="linkBox_mouseOutHandler(event)">
+		<s:CheckBox id="linkBox" skinClass="com.boloomo.emop.sparePurchase.view.process.skin.LinkCheckBoxSkin" color="0xFFFFFF"/>
+		<s:BorderContainer width="50" height="50" left="0" top="0" borderVisible="false" backgroundAlpha="0" />
+		<s:Button id="clickBtn" buttonMode="true" visible="false" left="36" top="25" click="clickBtn_clickHandler(event)" skinClass="com.boloomo.emop.sparePurchase.view.process.skin.ClickBtnSKin" />	
+	</s:Group>
+	<s:Label id="stepLabel" top="55" width="100" left="-25" textAlign="center" color="0x5D6D84" />
+	<s:BorderContainer id="opGroup" width="50" height="{opreateList.height}" borderColor="0xCCCCCC" cornerRadius="4" left="36" top="32" visible="false" creationComplete="opGroup.contentGroup.clipAndEnableScrolling = true">
+		<s:List id="opreateList" buttonMode="true" width="50" textAlign="center" dataProvider="{_opreaterData}" click="opreateList_clickHandler(event)"
+				borderVisible="false" lineHeight="25" verticalScrollPolicy="off" horizontalScrollPolicy="off"
+				contentBackgroundColor="0xDDE2ED" selectionColor="0x3AA5DB" color="0x595F7C"  rollOverColor="0x3AA5DB" />
+	</s:BorderContainer>
+</s:Group>

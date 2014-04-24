@@ -1,0 +1,355 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:ItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009"
+				xmlns:s="library://ns.adobe.com/flex/spark"
+				xmlns:mx="library://ns.adobe.com/flex/mx"
+				xmlns:ComponentStyle="com.boloomo.emop.repair.view.ComponentStyle.*"
+				xmlns:button="com.boloomo.emop.component.button.*"
+				width="960" height="70" 
+				creationComplete="itemrenderer1_creationCompleteHandler(event)"
+				dataChange="itemrenderer1_dataChangeHandler(event)"
+				contentBackgroundColor="#E5F3F4" rollOverColor="#4C8BE8" xmlns:dateChooser="com.boloomo.emop.component.dateChooser.*" xmlns:dropList="com.boloomo.emop.component.dropList.*" xmlns:port="com.boloomo.emop.component.port.*" >
+	
+	<fx:Script>
+		<![CDATA[
+			import com.boloomo.emop.component.event.DropListEventType;
+			import com.boloomo.emop.repair.components.ShipRepairRemarksPanel;
+			import com.boloomo.emop.repair.control.RepairFactoryControl;
+			import com.boloomo.emop.repair.event.RepairListEvent;
+			import com.boloomo.emop.userinfo.control.UserInfoControl;
+			import com.boloomo.event.BlmEvent;
+			import com.boloomo.event.BlmEventManager;
+			import com.boloomo.util.AppUtil;
+			import com.boloomo.util.maps.HashMap;
+			
+			import mx.collections.ArrayCollection;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			
+			private var remarksPanel:ShipRepairRemarksPanel = null;
+			[Embed(source='assets/image/state0.png')]
+			private var state0:Class;
+			[Embed(source='assets/image/state1.png')]
+			private var state1:Class;
+			[Embed(source='assets/image/state2.png')]
+			private var state2:Class;
+			
+			private var contMap:HashMap = new HashMap();
+			[Bindable]
+			private var contStr:String=""; 
+			
+			private var _contPanel:AddContOrderPanel;
+
+
+			
+			/**
+			 *  “备注”标签  的点击处理; “备注图标”兼用
+			 */ 
+			protected function remarkLB_clickHandler(event:MouseEvent):void
+			{
+				if(remarksPanel == null)
+				{
+					remarksPanel = ShipRepairRemarksPanel(PopUpManager.createPopUp(AppUtil.Instance.app,ShipRepairRemarksPanel,false));
+				}
+				remarksPanel.visible = true;
+				PopUpManager.centerPopUp(remarksPanel);
+				PopUpManager.bringToFront(remarksPanel);				
+			}
+			
+			/**
+			 * 厂修卡删除按钮点击事件
+			 * 获取List进行删除
+			 */ 
+			protected function deleteBtn_clickHandler(event:MouseEvent):void
+			{
+				this.parent.parent.parent.parent.parent.dispatchEvent(new BlmEvent("deletecard"));
+			}
+			
+
+			protected function itemrenderer1_creationCompleteHandler(event:FlexEvent):void
+			{
+					if(data.state=="0")
+					image.source=state0;
+					if(data.state=="1")
+						image.source=state1;
+					if(data.state=="2")
+						image.source=state2;
+					shipDroplist.blm_resetContent(UserInfoControl.Instance.userShipList());
+					if(shipDroplist.blm_selected()==null)
+						shipDroplist.blm_selectIndex(0);
+						
+					shipDroplist.addEventListener(DropListEventType.SELECT_ITEM,onShipNameChange);
+					
+					
+			}
+			public function contChange(e:BlmEvent):void
+			{
+				var contArray:Array =e.data as Array;
+				var tmpcontMap:HashMap = new HashMap();
+				for(var i:int =0;i<contArray.length;i++)
+				{
+					
+					tmpcontMap.put(i,contArray[i]);
+				}
+				var tmpArrayCollection:ArrayCollection=new ArrayCollection(tmpcontMap.getValues());
+				var str:String="";
+				for( i =0;i<tmpArrayCollection.length;i++)
+				{
+					str =str+tmpArrayCollection[i].na;
+				}
+				
+				state_L.text=str;
+				contMap = tmpcontMap;
+				
+
+			}
+
+
+			private function onShipNameChange(event:Event):void
+			{
+					
+			}
+
+
+			protected function editBtn_clickHandler(event:MouseEvent):void
+			{
+				data.status="1";
+				shipDroplist.blm_selectId(data.shipId);
+				port_S.blm_setName(data.port);
+				company.text=data.company;
+				ccs.text=data.ccs;
+				certdt.blm_setDefaultDate(data.certdt);
+				planInBtn.blm_setDefaultDate(data.planIn);
+				planOutBtn.blm_setDefaultDate(data.planOut);
+				realInBtn.blm_setDefaultDate(data.realIn);
+				realOutBtn.blm_setDefaultDate(data.realOut);
+				
+					shipName_L.visible =false;
+					port_L.visible =false;
+					company_L.visible =false;
+					ccs_L.visible=false;
+					certdt_L.visible =false;
+					planIn_L.visible =false;
+					planOut_L.visible =false;
+					planTime_L.visible =false;
+					planSaveTime_L.visible =false;
+					realIn_L.visible =false;
+					realOut_L.visible =false;
+					realTime_L.visible =false;
+					realSaveTime_L.visible =false;
+					editBtn.visible = false;
+					deleteBtn.visible = false;
+					
+					
+					shipDroplist.visible =true;
+					addbutton.visible = true;
+					port_S.visible =true;
+					company.visible =true;
+					ccs.visible= true;
+					certdt.visible=true;
+					planInBtn.visible =true;
+					planOutBtn.visible =true;
+					realInBtn.visible =true;
+					realOutBtn.visible =true;
+					saveBtn.visible = true;
+					cancelBtn.visible = true;
+			}
+
+
+			protected function itemrenderer1_dataChangeHandler(event:FlexEvent):void
+			{
+				if(data.state=="0")
+					image.source=state0;
+				if(data.state=="1")
+					image.source=state1;
+				if(data.state=="2")
+					image.source=state2;
+				port_S.blm_setName(data.port);
+				company.text=data.company;
+				ccs.text=data.ccs;
+				certdt.blm_setDefaultDate(data.certdt);
+				planInBtn.blm_setDefaultDate(data.planIn);
+				planOutBtn.blm_setDefaultDate(data.planOut);
+				realInBtn.blm_setDefaultDate(data.realIn);
+				realOutBtn.blm_setDefaultDate(data.realOut);
+
+				if(data.status=="1")
+				{
+					shipName_L.visible =false;
+					port_L.visible =false;
+					company_L.visible =false;
+					ccs_L.visible=false;
+					certdt_L.visible =false;
+					planIn_L.visible =false;
+					planOut_L.visible =false;
+					planTime_L.visible =false;
+					planSaveTime_L.visible =false;
+					realIn_L.visible =false;
+					realOut_L.visible =false;
+					realTime_L.visible =false;
+					realSaveTime_L.visible =false;
+					editBtn.visible = false;
+					deleteBtn.visible = false;
+					
+					shipDroplist.visible = true;
+					addbutton.visible = true;
+					port_S.visible =true;
+					company.visible =true;
+					ccs.visible= true;
+					certdt.visible=true;
+					planInBtn.visible =true;
+					planOutBtn.visible =true;
+					realInBtn.visible =true;
+					realOutBtn.visible =true;
+					saveBtn.visible = true;
+					cancelBtn.visible = true;
+					
+					
+				}
+				else
+				{
+					shipName_L.visible =true;
+					port_L.visible =true;
+					company_L.visible =true;
+					ccs_L.visible = true;
+					certdt_L.visible= true;
+					planIn_L.visible =true;
+					planOut_L.visible =true;
+					planTime_L.visible =true;
+					planSaveTime_L.visible =true;
+					realIn_L.visible =true;
+					realOut_L.visible =true;
+					realTime_L.visible =true;
+					realSaveTime_L.visible =true;
+					editBtn.visible = true;
+					deleteBtn.visible = true;
+					
+					shipDroplist.visible = false;
+					addbutton.visible =false;
+					port_S.visible =false;
+					company.visible =false;
+					ccs.visible = false;
+					certdt.visible = false;
+					planInBtn.visible =false;
+					planOutBtn.visible =false;
+					realInBtn.visible =false;
+					realOutBtn.visible =false;
+					saveBtn.visible = false;
+					cancelBtn.visible = false;
+					
+				}
+				var tmpArrayCollection:ArrayCollection=new ArrayCollection(data.contOrder.getValues());
+				var str:String="";
+				for(var i:int =0;i<tmpArrayCollection.length;i++)
+				{
+					str =str+tmpArrayCollection[i].na;
+				}
+				
+				state_L.text=str;
+			}
+
+
+			protected function saveBtn_clickHandler(event:MouseEvent):void
+			{
+				if(shipDroplist.blm_selected()!=null)
+				data.shipName=shipDroplist.blm_selected().label;
+				data.shipId = shipDroplist.blm_selected().id;
+				//data.port=port.text;
+				data.port= port_S.blm_getPortObject().nameCN;
+				if(data.company==company.text)
+				data.company=company.text;
+				else
+				{
+					data.companyId ="";
+					data.company=company.text;
+				}
+				data.ccs=ccs.text;
+				data.certdt=certdt.blm_getSelectDate();
+				data.planIn=planInBtn.blm_getSelectDate();
+				data.planOut=planOutBtn.blm_getSelectDate();
+				data.realIn=realInBtn.blm_getSelectDate();
+				data.realOut=realOutBtn.blm_getSelectDate();
+				data.status="0";
+				data.contOrder = contMap;
+				BlmEventManager.Instance.dispatchEvent(new BlmEvent(RepairListEvent.REPAIR_EDITREPAIRCARD,data));
+			}
+
+
+			protected function cancelBtn_clickHandler(event:MouseEvent):void
+			{
+				data.status="0";
+				
+				BlmEventManager.Instance.dispatchEvent(new BlmEvent(RepairListEvent.REPAIR_CANCELFACTORY,data));
+				
+			}
+
+
+			protected function blmaddbutton1_clickHandler(event:MouseEvent):void
+			{
+				BlmEventManager.Instance.dispatchEvent(new BlmEvent(RepairListEvent.REPAIR_SHOWADDCONTPANEL,shipDroplist.blm_selected().id));
+				RepairFactoryControl.Instance._addContOrderPanel.addEventListener("contchange",contChange);
+		
+			}
+
+		]]>
+	</fx:Script>
+	
+	
+	
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>	
+	
+	<s:Rect x="1" y="1"
+			radiusX="1" radiusY="1"
+			height="100%" width="100%">
+		
+		<!--边框线条设计-->
+		<s:stroke>
+			<s:LinearGradientStroke weight="1" scaleMode="normal"/>
+		</s:stroke>
+	</s:Rect> 
+	<mx:Image id="image" left="20" top="8"  />
+	<s:Label id="shipName_L" left="60" top="10" fontSize="13" fontWeight="bold" text="{data.shipName}"/>
+	<dropList:BlmDropListButton id="shipDroplist" top="8" left="45" visible="false" width="60" />
+	<s:Label id="state_L" left="120" top="15"  />
+	<button:blmAddButton id="addbutton" width="13" height="13" left="105" top="15" click="blmaddbutton1_clickHandler(event)" visible="false" />
+	<s:Label left="210" text="修理港口：" top="15"/>
+	<s:Label id="port_L" left="260" top="15" text="{data.port}"/>
+
+    <port:PortSearchPanel id="port_S" left="260" top="10" width="40" visible="false"/>
+	
+	<s:Label left="320" top="15" text="承修单位："/>
+	<mx:LinkButton id="company_L" left="370" top="10" width="100" height="20"  label="{data.company}" color="#2066CF" textAlign="left" textDecoration="underline"/>
+	<s:TextInput id="company" left="370" top="10" width="100" height="20" visible="false"/>
+	<s:Label   text="船级社:" left="550" top="15"/>
+	<s:Label  id="ccs_L" left="590" top="15" text="{data.ccs}" />
+	<s:TextInput id="ccs" left="590" top="10" width="80" height="20" visible="false"/>
+	<s:Label text="证书到期日:" left="710" top="15"/>
+	<s:Label id="certdt_L" left="780" top="15" text="{data.certdtName}"/>
+	<dateChooser:BlmDateSingleButton id="certdt" left="780" top="10" visible="false"/>
+	<button:blmBarrelButton id="deleteBtn" right="50" top="10" width="10" click="deleteBtn_clickHandler(event)"/>
+	<button:blmSaveButton id="saveBtn" right="50" top="10" width="10" click="saveBtn_clickHandler(event)" />
+	<button:blmEditButton id="editBtn" right="32" top="6" width="10" click="editBtn_clickHandler(event)"/>	
+	<button:blmCancelButton id="cancelBtn" right="33" top="10" width="10" click="cancelBtn_clickHandler(event)"/>			  
+	<button:blmBookButton right="17" top="10" width="10" click="remarkLB_clickHandler(event)"/>	
+	<s:Label left="40" bottom="24" text="计划："/>
+	<s:Label left="550" bottom="24" text="修期："/>
+	<s:Label left="710" bottom="24" width="36" text="提前："/>
+	<s:Label id="planIn_L" left="80" bottom="24" text="{data.planInName}"/>
+	<dateChooser:BlmDateSingleButton id="planInBtn" width="90" left="80" bottom="22" visible="false"/>
+	<s:Label left="250" bottom="24" text="→"/>		 
+	<s:Label id="planOut_L" left="320" bottom="24" text="{data.planOutName}"/>
+	<dateChooser:BlmDateSingleButton id="planOutBtn" width="90"  left="320" bottom="22" visible="false"/>
+	<s:Label id="planTime_L" left="590" bottom="24" text="{data.planTime}天"/>
+	<s:Label id="planSaveTime_L" left="740" bottom="24" text="{data.planSaveTime}天"/>
+	<s:Label left="40" bottom="5" text="实际："/>
+	<s:Label left="550" bottom="5" text="修期："/>
+	<s:Label left="710" bottom="5" text="节省："/>
+	<s:Label id="realIn_L" left="80" bottom="5" text="{data.realInName}"/>
+	<dateChooser:BlmDateSingleButton id="realInBtn" width="90" left="80" bottom="3" visible="false"/> 
+	<s:Label left="250" bottom="5" text="→ "/>
+	<s:Label id="realOut_L" left="320" bottom="5" text="{data.realOutName}"/>
+	<dateChooser:BlmDateSingleButton id="realOutBtn" width="90" left="320" bottom="3" visible="false"/>
+	<s:Label id="realTime_L" left="590" bottom="5" text="{data.realTime}天"/>
+	<s:Label id="realSaveTime_L" left="740" bottom="5" text="{data.realSaveTime}天"/>	
+</s:ItemRenderer>

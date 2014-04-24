@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:MXItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				  xmlns:s="library://ns.adobe.com/flex/spark" 
+				  xmlns:mx="library://ns.adobe.com/flex/mx" autoDrawBackground="true" creationComplete="mxitemrenderer1_creationCompleteHandler(event)" dataChange="mxitemrenderer1_dataChangeHandler(event)"
+				  clipAndEnableScrolling="true">
+	<fx:Script>
+		<![CDATA[
+			
+			import mx.events.FlexEvent;
+			
+			protected function mxitemrenderer1_creationCompleteHandler(event:FlexEvent):void
+			{
+				if(data.st == 0)
+				{
+					states0.visible = true;
+					states1.visible = false;
+					states2.visible = false;
+				}
+				else if(data.st == 1)
+				{
+					states0.visible = false;
+					states1.visible = true;
+					states2.visible = false;
+				}
+				else if(data.st == 2)
+				{
+					states0.visible = false;
+					states1.visible = false;
+					states2.visible = true;
+				}
+			}
+			
+			
+			protected function mxitemrenderer1_dataChangeHandler(event:FlexEvent):void
+			{
+				if(data.st == 0)
+				{
+					states0.visible = true;
+					states1.visible = false;
+					states2.visible = false;
+				}
+				else if(data.st == 1)
+				{
+					states0.visible = false;
+					states1.visible = true;
+					states2.visible = false;
+				}
+				else if(data.st == 2)
+				{
+					states0.visible = false;
+					states1.visible = false;
+					states2.visible = true;
+				}	
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<mx:Image source="@Embed('assets/radioBtn/state0.png')" visible="false" id="states0" horizontalCenter="0" horizontalAlign="center"/>
+	<mx:Image source="@Embed('assets/radioBtn/state1.png')" visible="false" id="states1" horizontalAlign="center" horizontalCenter="0"/>
+	<mx:Image source="@Embed('assets/radioBtn/state2.png')" visible="false" id="states2" horizontalAlign="center" horizontalCenter="0"/>
+</s:MXItemRenderer>

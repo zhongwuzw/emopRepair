@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:MXItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				  xmlns:s="library://ns.adobe.com/flex/spark" 
+				  xmlns:mx="library://ns.adobe.com/flex/mx"  
+				  clipAndEnableScrolling="true" autoDrawBackground="true" creationComplete="mxitemrenderer1_creationCompleteHandler(event)" dataChange="mxitemrenderer1_dataChangeHandler(event)">
+	<fx:Script>
+		<![CDATA[
+			import com.boloomo.emop.repair.type.ApplyObject;
+			import com.boloomo.util.AppUtil;
+			
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			
+			public var dateChooserPanel:EngineerIDDate = null;
+			
+			protected function mxitemrenderer1_creationCompleteHandler(event:FlexEvent):void
+			{
+				if(data.st == 2)
+				{
+					tempButton.visible = false;
+				}
+				else
+				{
+					tempButton.visible = true;
+				}
+			}
+			
+			
+			protected function mxitemrenderer1_dataChangeHandler(event:FlexEvent):void
+			{
+				if(data.st == 2)
+				{
+					tempButton.visible = false;
+				}
+				else
+				{
+					tempButton.visible = true;
+				}	
+			} 
+			
+
+			protected function button1_clickHandler(event:MouseEvent):void
+			{
+				if(dateChooserPanel == null)
+					dateChooserPanel = EngineerIDDate(PopUpManager.createPopUp(AppUtil.Instance.app,EngineerIDDate,false));
+				dateChooserPanel.visible = true;
+				PopUpManager.centerPopUp(dateChooserPanel);
+				PopUpManager.bringToFront(dateChooserPanel);
+				dateChooserPanel.obj = data as ApplyObject;
+				// TODO Auto-generated method stub
+/* 				tempButton.visible = false;
+				data.st = 2;
+				RepairControl.Instance.reqRefreshList(); */
+				
+			}
+
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:Button label="完成" click="button1_clickHandler(event)" id="tempButton" horizontalCenter="0"/>
+<!--	<mx:Image source="@Embed('assets/radioBtn/states_0.png')" visible="false" id="states0" horizontalCenter="0" horizontalAlign="center"/>
+	<mx:Image source="@Embed('assets/radioBtn/states_1.png')" visible="false" id="states1" horizontalAlign="center" horizontalCenter="0"/>-->
+</s:MXItemRenderer>

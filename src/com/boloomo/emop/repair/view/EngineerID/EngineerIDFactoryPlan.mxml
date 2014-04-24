@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:MXDataGridItemRenderer autoDrawBackground="false"  xmlns:fx="http://ns.adobe.com/mxml/2009" 
+						  xmlns:s="library://ns.adobe.com/flex/spark" 
+						  xmlns:mx="library://ns.adobe.com/flex/mx" focusEnabled="true"
+						  >
+	
+	<fx:Script>
+		<![CDATA[
+			import com.boloomo.emop.repair.control.ProjectItemControl;
+			import com.boloomo.emop.repair.type.ProjectOrderObject;
+
+			protected function lblData_clickHandler(event:MouseEvent):void
+			{
+				//ProjectItemControl.Instance.reqEngineerFactoryPlan(data as ProjectOrderObject);
+			}		
+			
+		]]>
+	</fx:Script>
+	<s:Label textDecoration="underline" left="30" buttonMode="true" text="{data.facid}" verticalCenter="0" click="lblData_clickHandler(event)" maxDisplayedLines="1"/>
+</s:MXDataGridItemRenderer>

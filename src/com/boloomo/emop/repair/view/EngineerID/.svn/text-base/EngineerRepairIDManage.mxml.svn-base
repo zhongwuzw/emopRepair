@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009" 
+			   xmlns:s="library://ns.adobe.com/flex/spark" 
+			   xmlns:button="com.boloomo.emop.component.button.*"
+			   close="blmtitlewindow1_closeHandler(event)" 
+			   creationComplete="titlewindow1_creationCompleteHandler(event)"
+			   xmlns:mx="library://ns.adobe.com/flex/mx" 
+			   width="420" height="500" title="调整申请单">
+	<s:layout>
+		<s:BasicLayout/>
+	</s:layout>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.boloomo.emop.repair.control.ProjectItemControl;
+			import mx.collections.ArrayCollection;
+			import mx.controls.*;
+			import mx.events.*;
+			
+			public var dsObject:ArrayCollection; 
+			
+			protected function button1_clickHandler(event:MouseEvent):void
+			{
+				//		this.dispatchEvent(new BlmEvent("check_opreater",obj));
+				ProjectItemControl.Instance.reqSubmitOperation();
+				this.visible = false;
+			}
+			
+			protected function blmtitlewindow1_closeHandler(event:CloseEvent):void
+			{
+				this.visible = false;
+			}
+			
+			protected function button2_clickHandler(event:MouseEvent):void
+			{
+				this.visible = false;
+			}
+
+			protected function titlewindow1_creationCompleteHandler(event:FlexEvent):void
+			{
+/* 				var fakeObj:Object = {flag:false,applyid:"010002345",repairItemCode:"A-1023",repairItemName:"项目名称1"};
+				tempList.addItem(fakeObj);
+				var fakeObj1:Object = {flag:false,applyid:"010002345",repairItemCode:"A-1023",repairItemName:"项目名称1"};
+				tempList.addItem(fakeObj1);
+				var fakeObj2:Object = {flag:false,applyid:"010002345",repairItemCode:"A-1023",repairItemName:"项目名称1"};
+				tempList.addItem(fakeObj2);
+				tempList.refresh(); */
+			}
+
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+		<fx:String id="step"></fx:String>
+		<s:ArrayCollection id="tempList" />
+		<s:ArrayCollection id="tempList1" />
+	</fx:Declarations>
+	<mx:DataGrid x="5" y="10" id="listGrid" width="400" height="400" allowMultipleSelection="true"
+				 dataProvider="{tempList}" verticalScrollPolicy="on">
+		<mx:columns>
+			<mx:DataGridColumn width="42">
+				<mx:itemRenderer>
+					<fx:Component>
+						<mx:HBox horizontalAlign="center">
+
+							<fx:Script>
+								<![CDATA[
+									import com.boloomo.emop.repair.control.ProjectItemControl;
+									protected function checkbox1_changeHandler(event:Event,obj:Object):void
+									{
+										var flag:Boolean;
+										if(CheckBox(event.target).selected)
+										{
+											flag = true;
+											ProjectItemControl.Instance.reqSaveEngineerManage(obj,flag);
+										}
+										else
+										{
+											flag = false;
+											ProjectItemControl.Instance.reqSaveEngineerManage(obj,flag);
+										}
+										
+										trace("---------------------------------------------");
+										trace(obj.applyid);
+									}
+								]]>
+							</fx:Script>
+
+							<s:CheckBox width="20" change="checkbox1_changeHandler(event,data)"/>
+						</mx:HBox>
+					</fx:Component>
+				</mx:itemRenderer>
+			</mx:DataGridColumn>
+			<mx:DataGridColumn headerText="申请单号" dataField="applyid" textAlign="center"/>
+			<mx:DataGridColumn headerText="修理项代码" dataField="itemid" textAlign="center"/>
+			<mx:DataGridColumn headerText="修理项名称" dataField="itemn" textAlign="center"/>
+		</mx:columns>
+	</mx:DataGrid>
+	<s:Button label="取消" click="button2_clickHandler(event)" width="50" right="12" bottom="20"/>
+	<s:Button right="80" label="确认" click="button1_clickHandler(event)" width="50" bottom="20"/>
+</s:TitleWindow>

@@ -1,0 +1,90 @@
+<titlewindow:blmTitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009"  title="添加工程单"
+							xmlns:s="library://ns.adobe.com/flex/spark"  
+							xmlns:mx="library://ns.adobe.com/flex/mx"  width="450" height="250" 
+							xmlns:layers="com.esri.ags.layers.*" 
+							xmlns:titlewindow="com.boloomo.emop.component.titlewindow.*" 
+							close="blmtitlewindow1_closeHandler(event)"
+							xmlns:layout="flare.vis.operator.layout.*"
+							>
+
+	<fx:Script>
+		<![CDATA[
+			import com.boloomo.emop.repair.event.RepairListEvent;
+			import com.boloomo.event.BlmEvent;
+			import com.boloomo.event.BlmEventManager;
+			import com.boloomo.util.maps.HashMap;
+			
+			import mx.collections.ArrayCollection;
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			[Bindable]
+			private var projectListArray:ArrayCollection;
+			private var _shipName:String = "";
+			
+			/**
+			 * 初始化工程单
+			 * */
+			public function emop_list(tmpMap:HashMap,tmpstr:String):void
+			{
+				
+				projectListArray= new ArrayCollection(tmpMap.getValues());
+				_shipName = tmpstr;
+				
+			}
+			protected function blmtitlewindow1_closeHandler(event:CloseEvent):void
+			{
+				PopUpManager.removePopUp(this);
+				this.visible = false;
+			}
+
+
+
+
+			protected function confirmBtn_clickHandler(event:MouseEvent):void
+			{
+				PopUpManager.removePopUp(this);
+				this.visible = false;
+				var tmpArray:Array = new Array();
+				for(var i:int=0;i<projectListArray.length;i++)
+				{
+					if(projectListArray[i].checkStatus=="1")
+					tmpArray.push(projectListArray[i].proid);
+				}
+				if(tmpArray.length!=0)
+				BlmEventManager.Instance.dispatchEvent(new BlmEvent(RepairListEvent.REPAIR_ADDFACTORYLIST,tmpArray));
+				
+			}
+
+
+			protected function cancelBtn_clickHandler(event:MouseEvent):void
+			{
+				PopUpManager.removePopUp(this);
+				this.visible = false;
+			}
+			private function setShipName(oItem:Object,iCol:int):String
+			{
+				return _shipName;
+				
+			}
+
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<mx:DataGrid id="ProjectDataGrid" left="10" right="10" height="160" verticalScrollPolicy="auto"
+				 dataProvider="{projectListArray}" textAlign="center" verticalGridLines="false" 
+				 top="10"> 
+		<mx:columns> 
+			<mx:DataGridColumn headerText="工程单编号" dataField="proid" textAlign="center" width="100"  itemRenderer="com.boloomo.emop.repair.view.RepairShopPlan.CheckProjectListItemRender"/> 	
+			<mx:DataGridColumn headerText="船名" labelFunction="setShipName" textAlign="center"  /> 
+			<mx:DataGridColumn headerText="开始日期" dataField="beginDate" textAlign="center"  itemRenderer="com.boloomo.emop.repair.view.RepairShopPlan.BeginDateItemRender" /> 	
+			<mx:DataGridColumn headerText="结束日期" dataField="finishDate" textAlign="center"  itemRenderer="com.boloomo.emop.repair.view.RepairShopPlan.FinishDateItemRender" /> 	
+			
+
+		</mx:columns>	
+	</mx:DataGrid>
+	<s:Button id="confirmBtn" left="160" width="50" top="180" label="确认" click="confirmBtn_clickHandler(event)"/>
+	<s:Button id="cancelBtn" left="220" width="50" top="180" label="取消" click="cancelBtn_clickHandler(event)"/>
+</titlewindow:blmTitleWindow>
