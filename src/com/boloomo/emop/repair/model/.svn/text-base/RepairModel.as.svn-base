@@ -369,11 +369,10 @@ package com.boloomo.emop.repair.model
 
 		public function reqAddModProjectOrder(uid:String,dis:String,projectOrder:ProjectOrderObject):void
 		{
-			var state:int = projectOrder.state as int;
+			//var state:int = projectOrder.state as int;
 			var type:int = projectOrder.type as int;
 			trace(requestStr);
-			var requestStr:String=StringUtils.sprintf('{seq:"%s",uid:"%s",dis:"%s",proid:"%s",shipid:"%s",type:%d,state:%d,loc:"%s",asday:%d,afday:%d,psday:%d,pfday:%d,comid:"%s",comna:"%s",alert:"%s",illu:"%s",applyid:"%s"}',dis,uid,dis,projectOrder.proId,projectOrder.shipId,type,
-				state,projectOrder.location,projectOrder.asday.time,projectOrder.afday.time,projectOrder.psday.time,projectOrder.pfday.time,projectOrder.companyId,projectOrder.company,projectOrder.alert,projectOrder.illuArray.join("|"),projectOrder.applyMap.getKeys().join("|"));
+			var requestStr:String=StringUtils.sprintf('{seq:"%s",uid:"%s",dis:"%s",proid:"%s",shipid:"%s",type:%d,loc:"%s",psday:%d,pfday:%d,asday:%d,afday:%d,comid:"%s",comna:"%s",alert:"%s",illu:"%s",applyid:"%s"}',dis,uid,dis,projectOrder.proId,projectOrder.shipId,type,projectOrder.location,projectOrder.psday.time,projectOrder.pfday.time,projectOrder.asday.time,projectOrder.afday.time,projectOrder.companyId,projectOrder.company,projectOrder.alert,projectOrder.illuArray.join("|"),projectOrder.applyMap.getKeys().join("|"));
 			Network.Instance.SendPacket(0x6323,requestStr);
 			
 		/*	var requestStr:String=StringUtils.sprintf('{seq:"11",uid:"%s",dis:"%s",proid:"%s",shipid:"%s",type:"%s",state:"%s",loc:"%s",psday:%d,pfday:%d,comid:"%s",comna:"%s",alert:"%s",illu:"%s",applyid:"%s"}',uid,dis,projectOrder.proId,projectOrder.shipId,projectOrder.type,

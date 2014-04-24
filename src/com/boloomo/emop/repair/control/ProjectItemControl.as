@@ -674,7 +674,7 @@ package com.boloomo.emop.repair.control
 			var obj:Object = BlmJSON.decode(jasonStr); if(obj == null){return;}
 			if(obj.eid)
 				return;
-			var tempProjectObj:ProjectOrderObject=ProjectOrderObject.parse(obj);
+			var tempProjectObj:ProjectOrderObject=ProjectOrderObject.parse1(obj);
 			var tempApplyArray:Array=obj.applyinfo;
 			for(var i:int=0;i<tempApplyArray.length;i++)
 			{
@@ -782,6 +782,7 @@ package com.boloomo.emop.repair.control
 				this._projectOrderMap.remove(_currentProjectOrder.proId);
 				this._projectOrderMap.put(_currentProjectOrder.proId,_currentProjectOrder);
 				//this.refreshProjectOrder();
+				RepairModel.Instance.reqDetailProjectOrder(_currentProjectOrder.proId);
 				RepairModel.Instance.reqProjectOrder("admin");
 			}
 		}
@@ -939,7 +940,11 @@ package com.boloomo.emop.repair.control
 		//	_currentProjectOrder = _projectOrderMap.getValues()[0];
 			if(_engineerDetailPanel==null || _engineerDetailPanel.visible == false)
 				_engineerDetailPanel = EngineerIDPanel(PopUpManager.createPopUp(AppUtil.Instance.app,EngineerIDPanel,true));
-			
+			else
+			{
+				refreshEngineerIDPanel(_currentProjectOrder);
+				return;
+			}
 			_engineerDetailPanel.visible = true;
 			PopUpManager.centerPopUp(_engineerDetailPanel);
 			PopUpManager.bringToFront(_engineerDetailPanel);

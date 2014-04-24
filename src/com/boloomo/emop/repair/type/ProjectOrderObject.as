@@ -75,6 +75,37 @@ package com.boloomo.emop.repair.type
 			       obj.illuArray=tempillu.split("|");
 			return obj;
 		}
+		
+		public static function parse1(val:Object):ProjectOrderObject
+		{
+			var obj:ProjectOrderObject=new ProjectOrderObject;
+			obj.proId=val.proid;
+			obj.shipId=val.shipid;
+			obj.shipName=val.shipna;
+			var tempInt:int = val.type;
+			obj.type = tempInt.toString();
+			//obj.type=val.tp;
+			var tempInt1:int = val.state;
+			obj.state = tempInt1.toString();
+			//	obj.state=val.st;
+			obj.location=val.loc;
+			obj.psday=new Date(new Number(val.psday));
+			obj.pfday=new Date(new Number(val.pfday));
+			obj.asday=new Date(new Number(val.asday));
+			obj.afday=new Date(new Number(val.afday));
+			obj.pdays=val.pdays;
+			obj.adays=val.adays;
+			obj.companyId=val.comid;
+			obj.company=val.comna;
+			obj.facid=val.facid;
+			obj.facna=val.facna;
+			obj.alert=val.alert;
+			var tempillu:String=val.illu;
+			if(tempillu!=null)
+				obj.illuArray=tempillu.split("|");
+			return obj;
+		}
+		
 		public function clear():void
 		{
 			this.alert="";
@@ -156,14 +187,14 @@ package com.boloomo.emop.repair.type
 
 		public function get myState():String
 		{
-			var temp:String;
+		//	var temp:String;
 			if(state == '0')
-				temp = '未开始';
+				_myState = '未开始';
 			else if(state == '1')
-				temp = '施工中';
+				_myState = '施工中';
 			else if(state == '2')
-				temp = '已完工';
-			return temp;
+				_myState = '已完工';
+			return _myState;
 		}
 		
 		public function set myState(value:String):void
