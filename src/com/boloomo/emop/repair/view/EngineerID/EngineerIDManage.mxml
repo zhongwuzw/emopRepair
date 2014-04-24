@@ -30,13 +30,13 @@
 			import mx.managers.PopUpManager;
 			
 			[Bindable]
+			
 			private var _dataProvider:ArrayCollection;
-			public static var shipID:String = new String();
 			private var _emopShipId:String="";												//船端船舶ID
-			
 			private var _data:Vector.<ProjectOrderObject> = null;
-			
 			private var _promrt:promrtWindow = null;		//提示信息框
+			
+			public static var shipID:String = new String();
 			
 			protected function initApp(event:FlexEvent):void
 			{
