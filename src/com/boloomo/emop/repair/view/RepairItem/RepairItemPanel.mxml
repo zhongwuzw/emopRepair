@@ -15,6 +15,7 @@
 			import com.boloomo.emop.repair.components.RepairItemWorkcardButton;
 			import com.boloomo.emop.repair.control.RepairItemControl;
 			import com.boloomo.emop.repair.model.RepairModel;
+			import com.boloomo.emop.repair.type.CategoryObject;
 			import com.boloomo.emop.repair.type.EquipObject;
 			import com.boloomo.emop.repair.type.ItemObject;
 			import com.boloomo.emop.repair.type.ShipObject;
@@ -27,38 +28,22 @@
 			import mx.events.FlexEvent;
 			import mx.events.ListEvent;
 			import mx.managers.PopUpManager;
+			import mx.utils.HSBColor;
 			
-			import spark.core.NavigationUnit;			
+			import spark.core.NavigationUnit;	
+			
 			/**
 			 * @author zhoucd
 			 */ 
 			
-			
-			private var promrt:promrtWindow; //提示界面
-			public var addShipView:RepairAddShipPanel=null;//添加船舶的列表面板
-			public var addCWBTView:RepairAddCWBTPanel=null;//添加设备的面板
-			
-			
-			/**
-			 * 不同的编辑状态
-			 * 保存方式区别标志
-			 * value=0 选中树新建保存
-			 * value=1 编辑保存
-			 */ 
-			private var saveInfoFlag:int=-1; //记录 新建/编辑 的状态
-			
-			private var chosenShips:HashMap=null;
+			private var openPanelFlag:int;//打开修理项面板的标志： 1表示新建      2 表示显示
+			private var showRepairItemDetailView:RepairItemDetailPanel=null;//显示修理项详情的面板
+			private var promrt:promrtWindow; //提示界面			
 			private var selectedTreeNode:XML=null;//保存当前选中的树的结点
-			private var myItem:ItemObject=null;//记录当前选中项目的信息
-			private var currentShipBtn:RepairItemShipButton=null; //保存当前选中的船舶按钮
-			private var currentShip:ShipObject=null;
-			private var currentEquipView:TurbineListItem=null;//设置当前选中的设备界面（便于删除）
-			private var currentEquip:EquipObject=null;//当前选中的设备
-			private var cwbt:String=null;//CWBT信息
-			private var currentWorkCardBtn:RepairItemWorkcardButton=null;//为保证工作卡选中状态的互斥，在总界面也需要设置唯一的工作卡按钮
+			private var currentCategory:CategoryObject=new CategoryObject();;
+			private var currentItem:ItemObject=new ItemObject();
 			
-			
-			
+			//---------------------------------------------------------------------------	
 			/**
 			 * initialize
 			 */ 
@@ -80,134 +65,31 @@
 				PopUpManager.removePopUp(this);
 				this.visible=false;
 			}
-			
 			/**
-			 * 清空展示页面的所有信息
+			 * 新建树节点
 			 */ 
-			protected function clearRepairItemPanel():void{
-				editIconBtn.setVisible(false);
-				deleteIconBtn.setVisible(false);
-				saveBtn.visible=false;
-				cancelBtn.visible=false;
-				
-				codeText.text="";
-				codeText.setVisible(false);
-				codeLabel.text="";
-				codeLabel.setVisible(false);
-				
-				nameText.text="";
-				nameText.setVisible(false);
-				nameText.text="";
-				nameLabel.setVisible(false);	
-				
-				categoryLabel.text="";
-				categoryLabel.visible=false;
-				
-				contentText.text="";
-				contentText.editable=false;	
-				
-				addCWBTBtn.enabled=false;
-				delCWBTBtn.enabled=false;
-				shipHGroup.removeAllElements();
-				turbineVGroup.removeAllElements();
-			}
-			
-			/**
-			 * 船舶HGroup向左滚动
-			 */ 
-			protected function shipLeftBtn_clickHandler(event:MouseEvent):void
+			protected function addTreeLeafBtn_clickHandler(event:MouseEvent):void
 			{
-				// TODO Auto-generated method stub
-				smp.valueBy = shipHGroup.getHorizontalScrollPositionDelta(NavigationUnit.LEFT);
-				anmiate.play();
+				itemTableGroup.visible=true;
+				RepairItemTree.enabled=false;
+				currentCategory.clear();
+				currentCategory.cateId=selectedTreeNode.@cateID;
+				currentCategory.cateName=selectedTreeNode.@label;
 				
-				if(shipHGroup.firstIndexInView == 1){
-					shipLeftBtn.enabled=false;
-				}else{					
-					shipLeftBtn.enabled=true;
-				}
-				shipRightBtn.enabled=true;				
-			}
-			/**
-			 * 船舶HGroup向右滚动
-			 */ 
-			protected function shipRightBtn_clickHandler(event:MouseEvent):void
-			{
-				// TODO Auto-generated method stub
-				smp.valueBy = shipHGroup.getHorizontalScrollPositionDelta(NavigationUnit.RIGHT);
-				anmiate.play();
+				openPanelFlag=1;//新建 
+				currentItem=null;
 				
-				if(shipHGroup.lastIndexInView == shipHGroup.numChildren-2){
-					shipRightBtn.enabled=false;
-				}else{					
-					shipRightBtn.enabled=true;
-				}
-				shipLeftBtn.enabled=true;
-				
-			} 
-			
-			
-			/**
-			 * 修理项管理
-			 * 点击事件：添加船舶
-			 */ 
-			protected function addShipButton_clickHandler(event:MouseEvent):void
-			{
-				if(addShipView == null || addShipView.visible==false)
+				if(showRepairItemDetailView == null || showRepairItemDetailView.visible==false)
 				{
-					addShipView = RepairAddShipPanel(PopUpManager.createPopUp(AppUtil.Instance.app,RepairAddShipPanel,true));
+					showRepairItemDetailView = RepairItemDetailPanel(PopUpManager.createPopUp(AppUtil.Instance.app,RepairItemDetailPanel,true));
 				}
-				addShipView.visible = true;
-				PopUpManager.centerPopUp(addShipView);
-				PopUpManager.bringToFront(addShipView);	
-				
-				addShipView.getItemID(selectedTreeNode.@code);
-				addShipView.dispatchEvent(new BlmEvent(RepairEventType.REPAIR_ITEM_CHOSEN_ADD_SHIP,chosenShips));				
-				//添加监听
-				addShipView.addEventListener(RepairEventType.REPAIR_ITEM_SELECT_EDIT_SHIP,editShips);
-			}
-			
-			/**
-			 * 添加船舶的返回处理
-			 */ 
-			protected function editShips(e:BlmEvent):void{				
-				chosenShips=e.data as HashMap;//选中船舶的数组		
-				showShips();
-			}
-			
-			/**
-			 * 展示更新后的chosenShips中的船舶
-			 */ 
-			protected function showShips():void{
-				shipHGroup.removeAllElements();//清空组件
-				if(chosenShips.size()<1)
-					return;
-				//				if((chosenShips.getItemAt(0) as ShipObject)==null)
-				//					return;
-				var ships:Array=chosenShips.getValues();
-				while(ships.length){
-					var shipBtn:RepairItemShipButton = new RepairItemShipButton();
-					var ship:ShipObject=ships.pop() as ShipObject;
-					shipBtn.annex_dataProvide(ship);
-					shipBtn.width=80;
-					shipHGroup.addElement(shipBtn);
-					//添加监听		
-					shipBtn.addEventListener(RepairEventType.REPAIR_ITEM_DELETE_SHIP,deleteShip);//监听删除船舶
-					shipBtn.addEventListener(RepairEventType.REPAIR_ITEM_SHOW_SHIP_INFO,showShipInfo);//监听船舶点击					
-				}				
-				callLater(adjustLeftRightButton);
-			}
-			
-			/**
-			 * 设置船舶左右滑动按钮的可用情况
-			 * callLater 调用
-			 */ 
-			protected function adjustLeftRightButton():void{
-				shipLeftBtn.enabled=false;
-				if(shipHGroup.numChildren > shipHGroup.columnCount)//此处有BUG，不能动态显示个数
-					shipRightBtn.enabled=true;
-				else
-					shipRightBtn.enabled=false;				
+				//初始化showRepairItemDetailView的数据
+				showRepairItemDetailView.initData(currentCategory,currentItem,openPanelFlag);
+				//设置当前修理项类别
+				RepairItemControl.Instance.setCurrentCategory(currentCategory.cateId);					
+				showRepairItemDetailView.visible = true;
+				PopUpManager.centerPopUp(showRepairItemDetailView);
+				PopUpManager.bringToFront(showRepairItemDetailView);							
 			}
 			
 			//-------------------树相关操作--------------------------------------------
@@ -216,82 +98,72 @@
 			 * 选中某项触发，显示相应的信息
 			 */ 
 			protected function RepairItemTree_itemClickHandler(event:ListEvent):void
-			{
-				if(saveInfoFlag != -1){
-					Alert.show("请先保存编辑内容！","操作提示");//已动态修改树的enable
-				}else{				
-					selectedTreeNode=XML(RepairItemTree.selectedItem);	
-					if(selectedTreeNode.@level==1){
-						rightPage.visible=false;
-						//显示添加菜单,清空显示
-						addTreeLeafBtn.enabled=true;
-						clearRepairItemPanel();
-						
-						//请求该目录下面的列表(如果已经存在，就不用再次从后台调用)
-						var flag:Boolean=selectedTreeNode[0].hasComplexContent();
-						if(!flag){
-							RepairItemControl.Instance.setCurrentCategory(selectedTreeNode.@cateID);
-							RepairModel.Instance.reqRepairItem(selectedTreeNode.@cateID);
-						}												
-					}else if(selectedTreeNode.@level==2){
-						rightPage.visible=true;
-						var parentNode:XML=selectedTreeNode.parent() as XML;
-						//隐藏添加菜单、显示删除和编辑按钮，显示信息
-						addTreeLeafBtn.enabled=false;
-						
-						editIconBtn.visible=true;
-						deleteIconBtn.visible=true;
-						
-						shipHGroup.removeAllElements();
-						turbineVGroup.removeAllElements();
-						
-						//具体信息（船舶、设备信息）等到获取到数据的时候更新		
-						codeLabel.text=selectedTreeNode.@code;
-						codeLabel.visible=true;
-						nameLabel.text=selectedTreeNode.@name;
-						nameLabel.visible=true;
-						categoryLabel.text=parentNode.@label;
-						categoryLabel.visible=true;
-						contentText.text="加载中，请稍候...";
-						contentText.visible=true;
-						
-						//获取该项目的详细信息 
-						//1.设置当前修理项类别	2.设置当前修理项		3.获取修理项详细信息
-						RepairItemControl.Instance.setCurrentItem(parentNode.@cateID,selectedTreeNode.@code);
-						RepairModel.Instance.reqDetailRepairItem(selectedTreeNode.@code);
-						
+			{			
+				selectedTreeNode=XML(RepairItemTree.selectedItem);	
+				if(selectedTreeNode.@level==1){
+					itemTableGroup.visible=true;
+					currentCategory.clear();
+					currentCategory.cateId=selectedTreeNode.@cateID;
+					currentCategory.cateName=selectedTreeNode.@label;
+					
+					//显示添加菜单,清空显示
+					addTreeLeafBtn.enabled=true;
+					
+					//请求该目录下面的列表(如果已经存在，就不用再次从后台调用)
+					var flag:Boolean=selectedTreeNode[0].hasComplexContent();
+					if(!flag){
+						RepairItemControl.Instance.setCurrentCategory(currentCategory.cateId);
+						RepairModel.Instance.reqRepairItem(currentCategory.cateId);
+					}else{//已经有内容
+						itemTableArray.removeAll();	
+						for each(var tempXML:XML in selectedTreeNode.children()){
+							itemTableArray.addItem({category:selectedTreeNode.@label,code:tempXML.@code,name:tempXML.@name,content:tempXML.@text});
+						}
+						itemTableArray.refresh();
 					}
+				}else if(selectedTreeNode.@level==2){
+					addTreeLeafBtn.enabled=false;
+					itemTableGroup.visible=false;
+					
+					var parentNode:XML=selectedTreeNode.parent() as XML;
+					currentCategory.clear();
+					currentCategory.cateId=parentNode.@cateID;
+					currentCategory.cateName=parentNode.@label;
+					
+					if(currentItem == null)
+						currentItem=new ItemObject();
+					else
+						currentItem.clear();
+					currentItem.itemId=selectedTreeNode.@code;
+					currentItem.itemName=selectedTreeNode.@name;
+					currentItem.content=selectedTreeNode.@text;
+					
+					openPanelFlag=2;//设置打开方式为 显示修理项详情
+					
+					if(showRepairItemDetailView == null || showRepairItemDetailView.visible==false)
+					{
+						showRepairItemDetailView = RepairItemDetailPanel(PopUpManager.createPopUp(AppUtil.Instance.app,RepairItemDetailPanel,true));
+					}
+					
+					//初始化showRepairItemDetailView的数据
+					showRepairItemDetailView.initData(currentCategory,currentItem,openPanelFlag);
+					
+					//获取该项目的详细信息 		1.设置当前修理项类别	2.设置当前修理项		3.获取修理项详细信息
+					RepairItemControl.Instance.setCurrentItem(currentCategory.cateId,currentItem.itemId);
+					RepairModel.Instance.reqDetailRepairItem(currentItem.itemId);					
+					
+					showRepairItemDetailView.visible = true;
+					PopUpManager.centerPopUp(showRepairItemDetailView);
+					PopUpManager.bringToFront(showRepairItemDetailView);						
 				}
+				
 			}
-			/**
-			 * 新建树节点
-			 */ 
-			protected function addTreeLeafBtn_clickHandler(event:MouseEvent):void
-			{
-				rightPage.visible=true;
-				saveInfoFlag=0;//新建 保存
-				RepairItemTree.enabled=false;//新建状态，树不准操作
-				
-				//显示新增项目的界面				
-				saveBtn.setVisible(true);
-				cancelBtn.setVisible(true);
-				editIconBtn.setVisible(false);
-				deleteIconBtn.setVisible(false);
-				
-				codeText.text="";
-				codeText.setVisible(true);
-				codeLabel.setVisible(false);
-				nameText.text="";
-				nameText.setVisible(true);
-				nameLabel.setVisible(false);
-				
-				selectedTreeNode=XML(RepairItemTree.selectedItem);				
-				categoryLabel.text=selectedTreeNode.@label;
-				categoryLabel.visible=true;
-				
-				contentText.text="";
-				contentText.editable=true;							
-			}
+			
+			
+			
+			
+			
+			
 			/**
 			 * 在tree上面添加树结点
 			 * 修改XMLLISTCOLLECTION
@@ -301,240 +173,7 @@
 				selectedTreeNode=XML(RepairItemTree.selectedItem);
 				selectedTreeNode[0].appendChild(node);
 				RepairItemTree.expandChildrenOf(RepairItemTree.selectedItem,true);			
-			}
-			
-			/**
-			 * 保存新项目内容
-			 */ 
-			protected function saveBtn_clickHandler():void
-			{				
-				//恢复显示状态----公共部分
-				saveBtn.setVisible(false);
-				cancelBtn.setVisible(false);	
-				editIconBtn.setVisible(true);
-				deleteIconBtn.setVisible(true);
-				
-				nameText.setVisible(false);
-				nameLabel.text=nameText.text;
-				nameLabel.setVisible(true);
-				//categoryLabel 内容根据状态设置
-				contentText.editable=false;		
-				
-				//恢复显示状态------区别处理
-				if(saveInfoFlag==0){ //新建保存	
-					codeText.setVisible(false);
-					codeLabel.text=codeText.text;
-					codeLabel.setVisible(true);
-					//申请添加树结点
-					RepairItemControl.Instance.reqADDItem(selectedTreeNode.@cateID,codeLabel.text,nameText.text,contentText.text);
-				}else if(saveInfoFlag==1){ //编辑保存
-					codeLabel.setVisible(true);
-
-						//申请修改(先设置 currentItem)	
-						RepairItemControl.Instance.reqEditItem(XML(selectedTreeNode.parent()).@cateID,codeLabel.text,nameText.text,contentText.text);					
-				}
-				
-			}
-			
-			/**
-			 * 取消按钮
-			 */ 
-			protected function cancelBtn_clickHandler(event:MouseEvent):void
-			{
-				//恢复界面      默认选择第一个结点？
-				
-				saveBtn.setVisible(false);
-				cancelBtn.setVisible(false);	
-				
-				codeText.text="";
-				nameText.text="";
-				
-				if(saveInfoFlag==0){	//取消新建 清空显示					
-					codeLabel.text="";
-					nameLabel.text="";
-					categoryLabel.text="";		
-					contentText.text="";
-					shipHGroup.removeAllElements();
-					turbineVGroup.removeAllElements();
-					rightPage.visible=false;					
-				}else if(saveInfoFlag == 1){	//取消编辑 恢复显示
-					selectedTreeNode=XML(RepairItemTree.selectedItem);
-					codeLabel.text=selectedTreeNode.@code;
-					nameLabel.text=selectedTreeNode.@name;
-					categoryLabel.text=XML(selectedTreeNode.parent()).@label;	
-					contentText.text=selectedTreeNode.@text;
-					editIconBtn.visible=true;
-					deleteIconBtn.visible=true;
-				}
-				codeText.setVisible(false);
-				nameText.setVisible(false);
-				codeLabel.setVisible(true);
-				nameLabel.setVisible(true);
-				categoryLabel.visible=true;
-				contentText.editable=false;
-				
-				saveInfoFlag=-1;
-				RepairItemTree.enabled=true;//恢复树的可操作性
-			}
-			
-			
-			
-			/**
-			 * 编辑修理项
-			 */ 
-			protected function editIconBtn_clickHandler(event:MouseEvent):void
-			{							
-				saveInfoFlag=1;//修改保存
-				RepairItemTree.enabled=false;//编辑状态，树不准操作
-				
-				saveBtn.setVisible(true);
-				cancelBtn.setVisible(true);
-				editIconBtn.setVisible(false);
-				deleteIconBtn.setVisible(false);
-				
-				//				codeText.text=codeLabel.text;
-				//				codeText.setVisible(true);
-				//				codeLabel.setVisible(false);
-				nameText.text=nameLabel.text;
-				nameText.setVisible(true);
-				nameLabel.setVisible(false);	
-				
-				categoryLabel.visible=true;
-				contentText.editable=true;										
-			}
-			
-			/**
-			 * 删除修理项
-			 * 只在选中树的子项时出现
-			 */ 
-			protected function deleteIconBtn_clickHandler(event:MouseEvent):void
-			{
-				//先判断删除的条件：没有适用的船舶时
-				if(chosenShips.size()>0){
-					this.showAlertInfo("该修理项仍有船舶信息，不能删除！");
-					return;
-				}			
-				selectedTreeNode=XML(RepairItemTree.selectedItem);	
-				if(selectedTreeNode==null || selectedTreeNode.@level==1){
-					this.showAlertInfo("请先选择要删除的修理项");
-				}else{
-					//删除申请
-					RepairModel.Instance.reqDelRepairItem(codeLabel.text);				
-				}
-			}
-			
-			/**
-			 * 点击弹窗
-			 * 添加设备卡
-			 */ 
-			protected function addCWBT_clickHandler(event:MouseEvent):void
-			{
-				// TODO Auto-generated method stub
-				if(addCWBTView == null || addCWBTView.visible==false)
-				{
-					addCWBTView = RepairAddCWBTPanel(PopUpManager.createPopUp(AppUtil.Instance.app,RepairAddCWBTPanel,true));
-				}
-				addCWBTView.visible = true;
-				PopUpManager.centerPopUp(addCWBTView);
-				PopUpManager.bringToFront(addCWBTView);	
-				
-				addCWBTView.dispatchEvent(new BlmEvent(RepairEventType.REPAIR_ITEM_ADD_CWBT,currentShip));
-				addCWBTView.addEventListener(RepairEventType.REPAIR_ITEM_ADD_CWBT_BACK,addCWBT);
-				
-			}
-			/**
-			 * 删除设备按钮点击事件
-			 * 点击删除设备
-			 * 
-			 */ 
-			protected function deleteCWBT_clickHandler(event:MouseEvent):void
-			{
-				// TODO Auto-generated method stub
-				if(currentEquipView==null){
-					this.showAlertInfo("请先选择要删除的设备！");
-				}else{
-					//reqAddDelEquip(itemId:String,type:Number,shipId:String,equipObj:EquipObject):void
-					RepairModel.Instance.reqAddDelEquip(selectedTreeNode.@code,2,currentShip.shipId,currentEquip);
-				}
-				
-			}
-			
-			
-			/**
-			 * 删除船舶
-			 */ 
-			protected function deleteShip(e:BlmEvent):void{
-				currentShipBtn=e.data as RepairItemShipButton;
-				currentShip=new ShipObject();
-				currentShip.shipId=currentShipBtn.shipID;
-				currentShip.shipName=currentShipBtn.shipName.label;
-				
-				var shipVec:Vector.<ShipObject>=new Vector.<ShipObject>();
-				shipVec.push(chosenShips.getValue((e.data as RepairItemShipButton).shipID));
-				if(shipVec.length>0)
-					RepairModel.Instance.reqAddDelShip(selectedTreeNode.@code,2,shipVec);				
-			}
-			
-			/**
-			 * 船舶名 点击处理事件
-			 * 设置当前点击的船舶
-			 * 显示船舶对应的CWBT信息还有设备信息，包括工作卡信息
-			 * ---处理船舶的点击
-			 */
-			protected function showShipInfo(e:BlmEvent):void{
-				addCWBTBtn.enabled=true;
-				delCWBTBtn.enabled=true;
-				
-				if(currentShipBtn != null)
-					currentShipBtn.shipName.selected=false;
-				currentShipBtn= e.data as RepairItemShipButton;				
-				currentShip=currentShipBtn.shipObj;
-				RepairItemControl.Instance.setcurrentShip(currentShip.shipId);//在control中设置当前船舶
-				turbineVGroup.removeAllElements();//清空当前显示
-				//显示设备信息
-				if(currentShip!=null){
-					var equipArray:Array=currentShip.equipMap.getValues();
-					while(equipArray.length){
-						var equipObj:EquipObject=equipArray.pop() as EquipObject;
-						var equipGroup:TurbineListItem=new TurbineListItem();
-						equipGroup.getData(selectedTreeNode.@code,currentShip.shipId,equipObj);//传递信息（包括 工作卡信息）
-						turbineVGroup.addElement(equipGroup);					
-						equipGroup.addEventListener(RepairEventType.REPAIR_ITEM_GETEQUIP_BACK,setCurrentEquip);//监听，获取当前最新的设备
-					}
-				}
-			}
-			/**
-			 * 添加CWBT
-			 * 获取到cwbt的字符串以后，调用后台，添加cwbt
-			 */ 
-			protected function addCWBT(e:BlmEvent):void{
-				var cwbt:String=e.data as String;
-				var shipid:String=currentShip.shipId;
-				var equip:EquipObject=new EquipObject();
-				equip.equiqId=cwbt;//equip.equiqId 即是 cwbt
-				RepairModel.Instance.reqAddDelEquip(selectedTreeNode.@code,1,shipid,equip);
-				
-			}
-			/**
-			 * 设置当前的设备
-			 */ 
-			protected function setCurrentEquip(e:BlmEvent):void{
-				currentEquipView=e.data as TurbineListItem;
-				currentEquip=new EquipObject();
-				currentEquip.equiqId=currentEquipView.equipID;
-				currentEquip.equipName=currentEquipView.equipName;		
-				
-				addCWBTBtn.enabled=true;
-				delCWBTBtn.enabled=true;
-			}
-			/**
-			 * 设施当前的工作卡
-			 */ 
-			protected function setCurrentWorkCardButton(e:BlmEvent):void{
-				if(currentWorkCardBtn!=null)
-					currentWorkCardBtn.workCardName.selected=false;
-				currentWorkCardBtn=e.data as RepairItemWorkcardButton;
-			}
+			}			
 			/**
 			 * 显示提示信息
 			 * @param info 要显示的信息
@@ -583,29 +222,24 @@
 			 * @param 修理项XMLListCollection
 			 */ 
 			public function getRepairItemList(xmllist:XMLListCollection):void{
-				RepairItemTree.enabled=false;
+				itemTableArray.removeAll();
+				RepairItemTree.enabled=false;				
 				for(var i:int=0;i<xmllist.length;i++){
-					addTreeNode(xmllist.getItemAt(i) as XML);
+					var tempXML:XML=xmllist.getItemAt(i) as XML;
+					addTreeNode(tempXML);
+					itemTableArray.addItem({category:selectedTreeNode.@label,code:tempXML.@code,name:tempXML.@name,content:tempXML.@text});
 				}
+				itemTableArray.refresh();
 				RepairItemTree.enabled=true;
 			}
 			/**
+			 * 后台返回调用
 			 * 点击树的子项
-			 * 保存当前点击项的信息
+			 * 显示当前点击项的信息
 			 */ 
 			public function getItemInfo(item:ItemObject):void{
-				myItem=item;
-				selectedTreeNode=XML(RepairItemTree.selectedItem);	
-				selectedTreeNode.@text=myItem.content;//保存详细信息到树中
-				contentText.text=myItem.content;
-				//设置船舶信息，设备信息
-				chosenShips=new HashMap();
-				var shipArray:Array=myItem.shipMap.getValues();
-				while(shipArray.length){
-					var tempship:ShipObject=shipArray.pop() as ShipObject;
-					chosenShips.put(tempship.shipId,tempship);
-				}
-				showShips();					
+				currentItem=item;
+				showRepairItemDetailView.setItemData(item);
 			}
 			//----------------树节点，Item-------------------
 			/**
@@ -613,35 +247,22 @@
 			 * 该节点已经存在
 			 */ 
 			public function RepeatTreeNode():void{
-				clearRepairItemPanel();
-				saveInfoFlag=-1;
 				RepairItemTree.enabled=true;//恢复树的可操作性
-				rightPage.visible=false;
 				this.showAlertInfo("该节点已经存在！新建失败!");
 			}
 			/**
 			 * 新建树节点（项目Item）成功
 			 * 返回处理
 			 */ 
-			public function AddTreeNodeSuccess(xml:XML):void{				
-				saveBtn.setVisible(false);
-				cancelBtn.setVisible(false);	
-				editIconBtn.setVisible(true);
-				deleteIconBtn.setVisible(true);
-				
-				codeText.setVisible(false);
-				codeLabel.text=codeText.text;
-				codeLabel.setVisible(true);
-				nameText.setVisible(false);
-				nameLabel.text=nameText.text;
-				nameLabel.setVisible(true);
-				
-				categoryLabel.visible=true;
-				contentText.editable=false;	
+			public function AddTreeNodeSuccess(xml:XML):void{							
+				RepairItemTree.enabled=true;//恢复树的可操作性	
+				RepairItemTree.enabled=false;		
 				
 				addTreeNode(xml);				
-				saveInfoFlag=-1;
-				RepairItemTree.enabled=true;//恢复树的可操作性	
+				itemTableArray.addItem({category:selectedTreeNode.@label,code:xml.@code,name:xml.@name,content:xml.@text});				
+				itemTableArray.refresh();
+				
+				RepairItemTree.enabled=true;
 				this.showPromptInfo("新建成功！");
 			}
 			
@@ -650,10 +271,7 @@
 			 * 返回处理
 			 */ 
 			public function AddTreeNodeFail():void{
-				clearRepairItemPanel();
-				saveInfoFlag=-1;
 				RepairItemTree.enabled=true;//恢复树的可操作性
-				rightPage.visible=false;
 				this.showAlertInfo("新建发生错误，请稍后再试...");
 			}
 			/**
@@ -668,60 +286,61 @@
 				selectedTreeNode.@name=xml.@name;
 				selectedTreeNode.@level=2;	
 				selectedTreeNode.@text=xml.@text;
+				
+				for(var i:int=0;i<itemTableArray.length;i++){
+					if(itemTableArray[i].code == xml.@code){
+						itemTableArray[i].name=xml.@name;
+						itemTableArray[i].content=xml.@text;
+					}
+					
+				}
+				itemTableArray.refresh();
 				//船舶和设备不是编辑改变的
-				
-				categoryLabel.visible=true;
-				
-				saveInfoFlag=-1;
 				RepairItemTree.enabled=true;//恢复树的可操作性
-				this.showPromptInfo("修改成功！");
+				showRepairItemDetailView.editItemSuccess();
 			}
 			/**
 			 * 编辑树节点（项目Item）失败
 			 * 返回处理
 			 */ 
 			public function EditTreeNodeFail():void{
-				//恢复界面      默认选择第一个结点？
-				codeText.text="";
-				nameText.text="";
-				
-				selectedTreeNode=XML(RepairItemTree.selectedItem);
-				codeLabel.text=selectedTreeNode.@code;
-				nameLabel.text=selectedTreeNode.@name;
-				categoryLabel.text=XML(selectedTreeNode.parent()).@label;	
-				contentText.text=selectedTreeNode.@text;
-				
-				codeText.setVisible(false);
-				nameText.setVisible(false);
-				codeLabel.setVisible(true);
-				nameLabel.setVisible(true);
-				categoryLabel.visible=true;
-				contentText.editable=false;
-				
-				saveInfoFlag=-1;
+				showRepairItemDetailView.editItemFail();
 				RepairItemTree.enabled=true;//恢复树的可操作性
-				this.showAlertInfo("修改失败，请稍后再试...");
 			}
 			/**
 			 * 删除树节点（Item）失败
-			 * 显示提示信息
+			 * 在 showRepairItemDetailView 显示失败信息
 			 */ 
 			public function DeleteRepairItemFail():void{
-				this.showAlertInfo("删除失败，请稍后再试...");
+				showRepairItemDetailView.deleteItemFail();
 			}
 			/**
 			 * 删除树节点（Item）成功
 			 * 在树上删除结点
 			 */ 
 			public function DeleteRepairItemSuccess():void{
+				var i:int;
+				var childrenList:XMLListCollection;
 				
-				var parentNode:XML=RepairItemTree.getParentItem(RepairItemTree.selectedItem) as XML;
-				var childrenList:XMLListCollection=new XMLListCollection(XMLList(parentNode).children());
-				var i:Number=childrenList.getItemIndex(selectedTreeNode);
+				//------树暂时有BUG
+				if(itemTableArray.length==1){//只有一个修理项，默认点击是 整个树
+					childrenList=new XMLListCollection(XMLList(selectedTreeNode).children());
+				}else{
+					var parentNode:XML=RepairItemTree.getParentItem(RepairItemTree.selectedItem) as XML;
+					childrenList=new XMLListCollection(XMLList(parentNode).children());
+				}
+				i=childrenList.getItemIndex(selectedTreeNode);
 				childrenList.removeItemAt(i);
-				//清空显示
-				clearRepairItemPanel();
-				rightPage.visible=false;
+								
+				for(i=0;i<itemTableArray.length;i++){
+					if(itemTableArray[i].code == currentItem.itemId){
+						itemTableArray.removeItemAt(i);
+						break;
+					}					
+				}
+				itemTableArray.refresh();
+				
+				showRepairItemDetailView.deleteItemSucess();
 				this.showPromptInfo("删除成功！");
 			}
 			//----------------船舶-------------------
@@ -730,123 +349,145 @@
 			 * 
 			 */ 
 			public function ADDShipSucess(shipMap:HashMap):void{		
-				chosenShips=new HashMap();
-				chosenShips=shipMap;
-				showShips();
-				this.showPromptInfo("添加成功！");
+				showRepairItemDetailView.ADDShipSucess(shipMap);
 			}
 			/**
 			 * 添加船舶 失败
 			 * 
 			 */ 
 			public function ADDShipFail():void{
-				this.showAlertInfo("添加发生错误，请稍后重试...");
+				showRepairItemDetailView.ADDShipFail();
 			}
 			/**
 			 * 删除船舶 成功
 			 * 
 			 */ 
-			public function DeleteShipSucess():void{		
-				chosenShips.remove(currentShip.shipId);
-				shipHGroup.removeElement(currentShipBtn);
-				turbineVGroup.removeAllElements();
-				this.showPromptInfo("删除成功！");
+			public function DeleteShipSucess():void{	
+				showRepairItemDetailView.DeleteShipSucess();
+			}
+			/**
+			 * 批量删除船舶 成功
+			 * 
+			 */ 
+			public function DeleteShipVecSucess(shipMap:HashMap):void{		
+				showRepairItemDetailView.DeleteShipVecSucess(shipMap);
 			}
 			/**
 			 * 删除船舶 失败
 			 * 
 			 */ 
 			public function DeleteShipFail():void{
-				this.showAlertInfo("删除发生错误，请稍后重试...");
+				showRepairItemDetailView.DeleteShipFail();
 			}
 			//----------------设备-------------------
 			/**
 			 * 新建设备成功
 			 * 
 			 */ 
-			public function ADDEquipSucess(equip:EquipObject):void{				
-				var equipView:TurbineListItem=new TurbineListItem();
-				equipView.getData(selectedTreeNode.@code,currentShip.shipId,equip);
-				turbineVGroup.addElement(equipView);
-				equipView.addEventListener(RepairEventType.REPAIR_ITEM_GETEQUIP_BACK,setCurrentEquip);
-				equipView.addEventListener(RepairEventType.REPAIR_ITEM_DELETE_WORKCARD,setCurrentWorkCardButton);
-				this.showPromptInfo("新建设备成功！");
+			public function ADDEquipSucess(equip:EquipObject):void{	
+				showRepairItemDetailView.ADDEquipSucess(equip);
 			}
 			/**
 			 * 新建设备 失败
 			 * 
 			 */ 
 			public function ADDEquipFail():void{
-				this.showAlertInfo("新建发生错误，请稍后重试...");
+				showRepairItemDetailView.ADDEquipFail();
 			}
 			/**
 			 * 删除设备成功
 			 * 
 			 */ 
 			public function DelEquipSucess():void{		
-				turbineVGroup.removeElement(currentEquipView);
-				this.showPromptInfo("删除成功！");
+				showRepairItemDetailView.DelEquipSucess();
 			}
 			/**
 			 * 删除设备 失败
 			 * 
 			 */ 
 			public function DelEquipFail():void{
-				this.showAlertInfo("删除发生错误，请稍后重试...");
+				showRepairItemDetailView.DelEquipFail();
 			}
 			//----------------工作卡-------------------
 			/**
 			 * 传递获取到的工作卡列表
 			 */ 
 			public function SendWorkCards(tempHash:HashMap):void{
-				if(currentEquipView!=null){
-					currentEquipView.getWorkCardList(tempHash);
-				}
+				showRepairItemDetailView.SendWorkCards(tempHash);
 			}
 			/**
 			 * 新建工作卡 成功
 			 * 获取所有的工作卡，然后更新
 			 */ 
 			public function ADDWorkCardSucess(workCardMap:HashMap):void{
-				currentEquipView.editCards(workCardMap);
-				this.showPromptInfo("新建工作卡成功！");
+				showRepairItemDetailView.ADDWorkCardSucess(workCardMap);
 			}
 			/**
 			 * 新建工作卡 失败
 			 * 
 			 */ 
 			public function ADDWorkCardFail():void{
-				this.showAlertInfo("新建发生错误，请稍后重试...");
+				showRepairItemDetailView.ADDWorkCardFail();
 			}
 			/**
 			 * 删除工作卡成功
 			 * 
 			 */ 
-			public function DelWorkCardSucess(workCardMap:HashMap):void{		
-				//点击的时候，获取当前的工作卡按钮
-				currentEquipView.editCards(workCardMap);
-				this.showPromptInfo("删除成功！");
+			public function DelWorkCardSucess(workCardMap:HashMap):void{	
+				showRepairItemDetailView.DelWorkCardSucess(workCardMap);
 			}
 			/**
 			 * 删除工作卡 失败
 			 * 
 			 */ 
 			public function DelWorkCardFail():void{
-				this.showAlertInfo("删除发生错误，请稍后重试...");
+				showRepairItemDetailView.DelWorkCardFail();
 			}
+			
+			/**
+			 * 表格双击函数
+			 */ 
+			protected function itemTable_doubleClickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				addTreeLeafBtn.enabled=false;				
+				if(currentItem == null)
+					currentItem=new ItemObject();
+				else
+					currentItem.clear();
+				currentItem.itemId=event.target.data.code;
+				currentItem.itemName=event.target.data.name;
+				currentItem.content=event.target.data.content;
+				
+				openPanelFlag=2;//设置打开方式为 显示修理项详情
+				
+				if(showRepairItemDetailView == null || showRepairItemDetailView.visible==false)
+				{
+					showRepairItemDetailView = RepairItemDetailPanel(PopUpManager.createPopUp(AppUtil.Instance.app,RepairItemDetailPanel,true));
+				}
+				
+				//初始化showRepairItemDetailView的数据
+				showRepairItemDetailView.initData(currentCategory,currentItem,openPanelFlag);
+				
+				//获取该项目的详细信息 		1.设置当前修理项类别	2.设置当前修理项		3.获取修理项详细信息
+				RepairItemControl.Instance.setCurrentItem(currentCategory.cateId,currentItem.itemId);
+				RepairModel.Instance.reqDetailRepairItem(currentItem.itemId);					
+				
+				showRepairItemDetailView.visible = true;
+				PopUpManager.centerPopUp(showRepairItemDetailView);
+				PopUpManager.bringToFront(showRepairItemDetailView);	
+			}
+			
 		]]>
 	</fx:Script>
 	
-	<fx:Declarations>
-		<s:Animate id="anmiate" target="{shipHGroup}" duration="100" >
-			<s:motionPaths>
-				<s:SimpleMotionPath id="smp" property="horizontalScrollPosition"/>
-			</s:motionPaths>
-		</s:Animate>		
+	<fx:Declarations>	
 		<s:XMLListCollection id="repairItem">
 			<fx:XMLList xmlns="">				
 			</fx:XMLList>
 		</s:XMLListCollection>
+		<s:ArrayCollection id="itemTableArray">			
+		</s:ArrayCollection>
 	</fx:Declarations>
 	<mx:Canvas left="0" top="0" bottom="0" width="350" backgroundColor="0xF0F3F5">
 		<s:Group id="addItemGroupView" left="0" right="0" bottom="0" height="30">
@@ -859,63 +500,18 @@
 				 labelField="@label">
 		</mx:Tree>
 	</mx:Canvas>
-	<s:Group id="rightPage" left="350" right="0" top="0" bottom="0" visible="false">
-		<s:Label y="36" left="29" text="代码："/>
-		<s:Label id="codeLabel" y="36" left="69"/>
-		<s:TextArea id="codeText" visible="false" y="30" left="69" width="70" height="20"/>
-		<s:Label y="36" left="189" text="名称："/>
-		<s:Label id="nameLabel" y="36" left="229"/>
-		<s:TextArea id="nameText" visible="false" y="30" left="229" width="80" height="20"/>
-		<s:Label y="36" left="419" text="所属类型："/>
-		<s:Label id="categoryLabel" y="36" left="479"/>
-		<button:blmBarrelButton id="deleteIconBtn" visible="false" right="60" top="13" width="20" height="20"
-								click="deleteIconBtn_clickHandler(event)"/>
-		<button:blmEditButton id="editIconBtn" visible="false" right="30" top="10" width="20" height="20"
-							  click="editIconBtn_clickHandler(event)"/>
-		<button:blmSaveButton id="saveBtn" visible="false" right="60" top="10" width="20"
-							  height="20" label="保存" click="saveBtn_clickHandler()"/>
-		<button:blmCancelButton id="cancelBtn" visible="false" right="30" top="10" width="20"
-								height="20" label="放弃" click="cancelBtn_clickHandler(event)"/>
-		<s:Label left="29" top="70" text="内容："/>
-		<s:TextArea id="contentText" left="69" right="20" top="70" height="150" editable="false"/>
-		<s:Label x="29" bottom="203" text="船舶："/>
-		
-		<s:Button id="shipLeftBtn" left="80" bottom="195" width="20" height="20"
-				  click="shipLeftBtn_clickHandler(event)" enabled="false"
-				  skinClass="com.boloomo.emop.component.button.skin.SubLeftBtnSkin"/>
-		<s:HGroup id="shipHGroup" bottom="200" width="450" height="22" clipAndEnableScrolling="true"
-				  gap="20" horizontalCenter="10" verticalAlign="middle">
-		</s:HGroup>
-		<s:Button id="shipRightBtn" right="60" bottom="195" width="20" height="20"
-				  click="shipRightBtn_clickHandler(event)" enabled="false"
-				  skinClass="com.boloomo.emop.component.button.skin.SubRightBtnSkin"/>
-		
-		<button:blmAddButton left="632" right="20" bottom="200" height="20"
-							 click="addShipButton_clickHandler(event)"/>
-		<s:Group id="bottomGroup" left="29" right="20" bottom="20" height="150">
-			
-			<s:Rect x="0" y="0"
-					radiusX="1" radiusY="1"
-					height="100%" width="100%">				
-				<!--边框线条设计-->
-				<s:stroke>
-					<s:LinearGradientStroke weight="1" scaleMode="normal"/>
-				</s:stroke>
-				
-			</s:Rect> 
-			<s:Scroller top="5" bottom="25" width="100%">
-				<s:VGroup id="turbineVGroup" width="100%" height="100%" requestedRowCount="4" gap="5">
-				</s:VGroup>		
-			</s:Scroller>
-			
-			<s:HGroup left="5" right="0" bottom="1" height="20">
-				<button:blmAddButton id="addCWBTBtn" left="10" width="20" height="20" verticalCenter="0" enabled="false"
-									 click="addCWBT_clickHandler(event)"/>
-				<mx:VRule height="80%" width="2" verticalCenter="0"/>
-				<button:blmDeleteButton id="delCWBTBtn" width="20" height="20" verticalCenter="0" enabled="false"
-										click="deleteCWBT_clickHandler(event)"/> 
-			</s:HGroup>
-		</s:Group>
+	<s:Group id="itemTableGroup" left="350" right="0" top="0" bottom="0" visible="false">
+		<mx:DataGrid id="itemTable" left="10" right="10" top="10" bottom="10" 
+					 doubleClickEnabled="true" doubleClick="itemTable_doubleClickHandler(event)"
+					 verticalScrollPolicy="auto" dataProvider="{itemTableArray}" 
+					 textAlign="center" verticalGridLines="false"> 
+			<mx:columns> 
+				<mx:DataGridColumn headerText="类型" dataField="category" textAlign="center" width="70" /> 			
+				<mx:DataGridColumn headerText="代码" dataField="code" textAlign="center" width="50" /> 			
+				<mx:DataGridColumn headerText="名称" dataField="name" textAlign="center" /> 		
+				<mx:DataGridColumn headerText="内容" dataField="content" textAlign="left"/>
+			</mx:columns>	
+		</mx:DataGrid>
 	</s:Group>
 </titlewindow:blmTitleWindow>
 

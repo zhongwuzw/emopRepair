@@ -12,11 +12,14 @@ package com.boloomo.emop.repair.type
 	{
 		private var _cateId:String="";
 		private var _cateName:String="";
+		private var _nChild:int=0;
 		private var _itemMap:HashMap=new HashMap();
+
 		public static function parse(val:Object):CategoryObject{
 			var obj:CategoryObject=new CategoryObject();
 			obj.cateId=val.cateid;
 			obj.cateName=val.caten;
+			obj._nChild=val.nchild;
 			return obj;
 		}
 		public function CategoryObject()
@@ -26,11 +29,12 @@ package com.boloomo.emop.repair.type
 		{
 			this.cateId="";
 			this.cateName="";
+			this._nChild=0;
 			this._itemMap.clear();
 		}
 		public function isClear():Boolean
 		{
-			if(this.cateId==""&&this.cateName==""&&this.itemMap.isEmpty())
+			if(this.cateId==""&&this.cateName==""&&this.itemMap.isEmpty()&&this._nChild==0)
 				return true;
 			else
 				return false;
@@ -64,6 +68,15 @@ package com.boloomo.emop.repair.type
 		public function set itemMap(value:HashMap):void
 		{
 			_itemMap = value;
+		}
+		public function get nChild():int
+		{
+			return _nChild;
+		}
+		
+		public function set nChild(value:int):void
+		{
+			_nChild = value;
 		}
 
 

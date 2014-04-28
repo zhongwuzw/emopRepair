@@ -26,6 +26,14 @@ package com.boloomo.emop.repair.utils
 			var vNode:String='<node id="vir" nc="正在请求数据,请稍等..."></node>';
 			xml.appendChild(new XML(vNode));
 		}	
+		
+		/**按照分类code排序*/
+		public static function sortByItemCode(o1:ItemObject,o2:ItemObject):int{
+			trace(Number(o2.itemId.substring(2,5)));
+			trace(Number(o1.itemId.substring(2,5)));
+			return Number(o2.itemId.substring(2,5))-Number(o1.itemId.substring(2,5));			
+		}
+		
 		/**
 		 * 将类别对象CategoryObject转换成XML
 		 * @param cateObj
@@ -34,6 +42,7 @@ package com.boloomo.emop.repair.utils
 		public static function CategoryObjectToXML(cateObj:CategoryObject):XML{
 			var node:String='<node label="'+cateObj.cateName+'" ' +
 				'level="'+1+'" cateID="'+cateObj.cateId+'" ' +
+				'nchild="'+cateObj.nChild+'" '+
 				'itemMap="'+cateObj.itemMap+'"></node>';
 			return new XML(node);
 		}
@@ -50,7 +59,8 @@ package com.boloomo.emop.repair.utils
 				'name="'+cateObj.itemName+'" '+
 				'shipMap="'+cateObj.shipMap+'" '+
 				'equipMap="'+cateObj.equipMap+'" '+
-				'text="'+cateObj.content+'"></node>';
+				"text='"+cateObj.content+"'></node>";
+			trace(node);
 			return new XML(node);
 		}
 	}

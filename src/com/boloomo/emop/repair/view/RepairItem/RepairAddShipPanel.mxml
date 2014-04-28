@@ -91,7 +91,7 @@
 			protected function confirm_clickHandler(event:MouseEvent):void
 			{
 				// TODO Auto-generated method stub
-	//			selectedShips.clear();
+				//			selectedShips.clear();
 				var j:int;
 				var addshipVec:Vector.<ShipObject>=new Vector.<ShipObject>();
 				var delshipVec:Vector.<ShipObject>=new Vector.<ShipObject>();
@@ -116,10 +116,12 @@
 						
 					}
 				}
-				RepairModel.Instance.reqAddDelShip(itemID,1,addshipVec);//添加
-//				RepairModel.Instance.reqAddDelShip(itemID,2,delshipVec);//删除
-								
-//				this.dispatchEvent(new BlmEvent(RepairEventType.REPAIR_ITEM_SELECT_EDIT_SHIP,selectedShips));
+				if(addshipVec.length>0)
+					RepairModel.Instance.reqAddDelShip(itemID,1,addshipVec);//添加
+				if(delshipVec.length>0)
+					RepairModel.Instance.reqAddDelShip(itemID,2,delshipVec);//删除
+				
+				//				this.dispatchEvent(new BlmEvent(RepairEventType.REPAIR_ITEM_SELECT_EDIT_SHIP,selectedShips));
 				PopUpManager.removePopUp(this);
 				this.visible=false;
 			}

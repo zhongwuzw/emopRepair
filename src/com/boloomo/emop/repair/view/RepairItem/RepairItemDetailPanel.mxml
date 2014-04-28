@@ -1,0 +1,736 @@
+<?xml version="1.0" encoding="utf-8"?>
+<titlewindow:blmTitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009" 
+							xmlns:s="library://ns.adobe.com/flex/spark" 
+							xmlns:mx="library://ns.adobe.com/flex/mx" 
+							xmlns:titlewindow="com.boloomo.emop.component.titlewindow.*"
+							title="修理项详情"
+							creationComplete="initPanel(event)"
+							close="blmtitlewindow_closeHandler()"
+							width="800" height="500" xmlns:button="com.boloomo.emop.component.button.*">
+	<fx:Script>
+		<![CDATA[
+			import com.boloomo.emop.component.prompt.PromptEvent;
+			import com.boloomo.emop.component.prompt.promrtWindow;
+			import com.boloomo.emop.repair.components.RepairItemShipButton;
+			import com.boloomo.emop.repair.components.RepairItemWorkcardButton;
+			import com.boloomo.emop.repair.control.RepairItemControl;
+			import com.boloomo.emop.repair.model.RepairModel;
+			import com.boloomo.emop.repair.type.CategoryObject;
+			import com.boloomo.emop.repair.type.EquipObject;
+			import com.boloomo.emop.repair.type.ItemObject;
+			import com.boloomo.emop.repair.type.ShipObject;
+			import com.boloomo.event.BlmEvent;
+			import com.boloomo.util.AppUtil;
+			import com.boloomo.util.maps.HashMap;
+			
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			
+			import spark.core.NavigationUnit;
+			
+			
+			private var promrt:promrtWindow; //提示界面
+			public var addShipView:RepairAddShipPanel=null;//添加船舶的列表面板
+			public var addCWBTView:RepairAddCWBTPanel=null;//添加设备的面板
+			
+			private var saveInfoFlag:int=-1; //记录状态 ,以便保存时调用不同接口   		0表示新建     1表示编辑
+			private var openPanelFlag:int;	//记录面板打开状态 ，初始化数据的时候赋值 	1表示新建 	2表示显示
+			
+			private var currentCategory:CategoryObject=null;//记录当前选中的目录
+			private var currentItem:ItemObject=null;//记录当前选中项目的信息
+			private var chosenShips:HashMap=null;
+			private var currentShipBtn:RepairItemShipButton=null; //保存当前选中的船舶按钮
+			private var currentShip:ShipObject=null;
+			private var currentEquipView:TurbineListItem=null;//设置当前选中的设备界面（便于删除）
+			private var currentEquip:EquipObject=null;//当前选中的设备
+			private var cwbt:String=null;//CWBT信息
+			private var currentWorkCardBtn:RepairItemWorkcardButton=null;//为保证工作卡选中状态的互斥，在总界面也需要设置唯一的工作卡按钮
+			
+			
+			/**
+			 * 初始化
+			 */ 
+			protected function initPanel(event:FlexEvent):void
+			{					
+				codeLabel.visible=true;
+				nameLabel.visible=true;
+				categoryLabel.visible=true;
+				contentText.visible=true;
+			}
+			
+			/**
+			 * 初始化数据
+			 * 创建时被调用
+			 */ 
+			public function initData(category:CategoryObject,item:ItemObject,flag:int):void{
+				currentCategory=category;
+				currentItem=item;
+				openPanelFlag=flag;
+				if(openPanelFlag==1){//新建修理项
+					saveInfoFlag=0;//新建保存
+					//显示新增项目的界面				
+					saveBtn.setVisible(true);
+					cancelBtn.setVisible(true);
+					editIconBtn.setVisible(false);
+					deleteIconBtn.setVisible(false);
+					
+					codeText.text="";
+					codeText.setVisible(true);
+					codeLabel.setVisible(false);
+					nameText.text="";
+					nameText.setVisible(true);
+					nameLabel.setVisible(false);
+					categoryLabel.text=currentCategory.cateName;			
+					contentText.text="";
+					contentText.editable=true;		
+				}else if(openPanelFlag==2){//显示修理项	,等待setItemData		
+					contentText.text="Loading...";
+				}			
+			}
+			
+			/**
+			 * 获取从后台获得修理项数据
+			 * 并显示信息
+			 */ 
+			public function setItemData(item:ItemObject):void{
+				currentItem=item;
+				
+				//显示修理项信息
+				editIconBtn.visible=true;
+				deleteIconBtn.visible=true;
+				codeLabel.text=currentItem.itemId;
+				nameLabel.text=currentItem.itemName;
+				categoryLabel.text=currentCategory.cateName;
+				contentText.text=currentItem.content;
+				
+				//设置船舶信息，设备信息
+				chosenShips=new HashMap();
+				var shipArray:Array=currentItem.shipMap.getValues();
+				while(shipArray.length){
+					var tempship:ShipObject=shipArray.pop() as ShipObject;
+					chosenShips.put(tempship.shipId,tempship);
+				}
+				showShips();	
+			}
+			
+			//------------------------------点击响应事件------------------------------------------------------------------------			
+			/**
+			 * 关闭窗口
+			 */ 
+			protected function blmtitlewindow_closeHandler():void
+			{
+				PopUpManager.removePopUp(this);
+				this.visible=false;
+			}
+
+			/**
+			 * 保存新项目内容
+			 */ 
+			protected function saveBtn_clickHandler():void
+			{				
+				//恢复显示状态----公共部分
+				saveBtn.setVisible(false);
+				cancelBtn.setVisible(false);	
+				editIconBtn.setVisible(true);
+				deleteIconBtn.setVisible(true);
+				
+				nameText.setVisible(false);
+				nameLabel.text=nameText.text;
+				nameLabel.setVisible(true);
+				//categoryLabel 内容根据状态设置
+				contentText.editable=false;		
+				
+				//恢复显示状态------区别处理
+				if(saveInfoFlag==0){ //新建保存
+					if(currentItem == null)
+						currentItem=new ItemObject();
+					else
+						currentItem.clear();
+					currentItem.itemId=codeText.text;
+					currentItem.itemName=nameText.text;
+					currentItem.content=contentText.text;
+					//申请添加树结点
+					RepairItemControl.Instance.reqADDItem(currentCategory.cateId,currentItem.itemId,currentItem.itemName,currentItem.content);
+					blmtitlewindow_closeHandler();//关闭窗口
+					
+				}else if(saveInfoFlag==1){ //编辑保存	
+					
+					//修理项ID、修理项类别 不可修改
+					nameText.text=nameLabel.text;
+					nameText.setVisible(true);
+					nameLabel.setVisible(false);	
+					contentText.editable=true;		
+					//申请修改(先设置 currentItem)	
+					RepairItemControl.Instance.reqEditItem(currentCategory.cateId,codeLabel.text,nameText.text,contentText.text);					
+				}
+				
+			}
+			
+			/**
+			 * 取消按钮
+			 */ 
+			protected function cancelBtn_clickHandler(event:MouseEvent):void
+			{				
+				if(saveInfoFlag==0){	//取消新建 关闭窗口					
+					blmtitlewindow_closeHandler();
+				}else if(saveInfoFlag == 1){	//取消编辑 恢复显示	
+					editIconBtn.visible=true;
+					deleteIconBtn.visible=true;
+					saveBtn.setVisible(false);
+					cancelBtn.setVisible(false);	
+					
+					nameText.text="";
+					nameText.setVisible(false);
+					nameLabel.text=currentItem.itemName;
+					nameLabel.setVisible(true);
+					contentText.text=currentItem.content;
+					contentText.editable=false;
+							
+					saveInfoFlag=-1;
+				}
+
+			}
+			/**
+			 * 编辑修理项
+			 */ 
+			protected function editIconBtn_clickHandler(event:MouseEvent):void
+			{							
+				saveInfoFlag=1;//修改保存
+				
+				saveBtn.setVisible(true);
+				cancelBtn.setVisible(true);
+				editIconBtn.setVisible(false);
+				deleteIconBtn.setVisible(false);
+				
+				//修理项ID、修理项类别 不可修改
+				nameText.text=nameLabel.text;
+				nameText.setVisible(true);
+				nameLabel.setVisible(false);	
+				contentText.editable=true;										
+			}
+			
+			/**
+			 * 删除修理项
+			 * 只在选中树的子项时出现
+			 */ 
+			protected function deleteIconBtn_clickHandler(event:MouseEvent):void
+			{
+				//先判断删除的条件：没有适用的船舶时
+				if(chosenShips.size()>0){
+					this.showAlertInfo("该修理项仍有船舶信息，不能删除！");
+					return;
+				}			
+				//删除申请
+				RepairModel.Instance.reqDelRepairItem(currentItem.itemId);						
+			}
+			/**
+			 * 船舶HGroup向左滚动
+			 */ 
+			protected function shipLeftBtn_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				smp.valueBy = shipHGroup.getHorizontalScrollPositionDelta(NavigationUnit.LEFT);
+				anmiate.play();
+				
+				if(shipHGroup.firstIndexInView == 1){
+					shipLeftBtn.enabled=false;
+				}else{					
+					shipLeftBtn.enabled=true;
+				}
+				shipRightBtn.enabled=true;				
+			}
+			/**
+			 * 船舶HGroup向右滚动
+			 */ 
+			protected function shipRightBtn_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				smp.valueBy = shipHGroup.getHorizontalScrollPositionDelta(NavigationUnit.RIGHT);
+				anmiate.play();
+				
+				if(shipHGroup.lastIndexInView == shipHGroup.numChildren-2){
+					shipRightBtn.enabled=false;
+				}else{					
+					shipRightBtn.enabled=true;
+				}
+				shipLeftBtn.enabled=true;
+				
+			} 
+			
+			
+			/**
+			 * 修理项管理
+			 * 点击事件：添加船舶
+			 */ 
+			protected function addShipButton_clickHandler(event:MouseEvent):void
+			{
+				if(addShipView == null || addShipView.visible==false)
+				{
+					addShipView = RepairAddShipPanel(PopUpManager.createPopUp(AppUtil.Instance.app,RepairAddShipPanel,true));
+				}
+				addShipView.visible = true;
+				PopUpManager.centerPopUp(addShipView);
+				PopUpManager.bringToFront(addShipView);	
+				
+				addShipView.getItemID(currentItem.itemId);
+				addShipView.dispatchEvent(new BlmEvent(RepairEventType.REPAIR_ITEM_CHOSEN_ADD_SHIP,chosenShips));				
+				//添加监听
+				addShipView.addEventListener(RepairEventType.REPAIR_ITEM_SELECT_EDIT_SHIP,editShips);
+			}
+			/**
+			 * 点击弹窗
+			 * 添加设备卡
+			 */ 
+			protected function addCWBT_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				if(addCWBTView == null || addCWBTView.visible==false)
+				{
+					addCWBTView = RepairAddCWBTPanel(PopUpManager.createPopUp(AppUtil.Instance.app,RepairAddCWBTPanel,true));
+				}
+				addCWBTView.visible = true;
+				PopUpManager.centerPopUp(addCWBTView);
+				PopUpManager.bringToFront(addCWBTView);	
+				
+				addCWBTView.dispatchEvent(new BlmEvent(RepairEventType.REPAIR_ITEM_ADD_CWBT,currentShip));
+				addCWBTView.addEventListener(RepairEventType.REPAIR_ITEM_ADD_CWBT_BACK,addCWBT);
+				
+			}
+			/**
+			 * 删除设备按钮点击事件
+			 * 点击删除设备
+			 * 
+			 */ 
+			protected function deleteCWBT_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				if(currentEquipView==null){
+					this.showAlertInfo("请先选择要删除的设备！");
+				}else{
+					//reqAddDelEquip(itemId:String,type:Number,shipId:String,equipObj:EquipObject):void
+					RepairModel.Instance.reqAddDelEquip(currentItem.itemId,2,currentShip.shipId,currentEquip);
+				}
+				
+			}
+			//-----------------------------操作事件------------------------------------------------------------------------	
+			/**
+			 * 清空展示页面的所有信息
+			 */ 
+			protected function clearRepairItemPanel():void{
+				editIconBtn.setVisible(false);
+				deleteIconBtn.setVisible(false);
+				saveBtn.visible=false;
+				cancelBtn.visible=false;
+				
+				codeText.text="";
+				codeText.setVisible(false);
+				codeLabel.text="";
+				codeLabel.setVisible(false);
+				
+				nameText.text="";
+				nameText.setVisible(false);
+				nameText.text="";
+				nameLabel.setVisible(false);	
+				
+				categoryLabel.text="";
+				categoryLabel.visible=false;
+				
+				contentText.text="";
+				contentText.editable=false;	
+				
+				addCWBTBtn.enabled=false;
+				delCWBTBtn.enabled=false;
+				shipHGroup.removeAllElements();
+				turbineVGroup.removeAllElements();
+			}
+			
+			
+			/**
+			 * 添加船舶的返回处理
+			 */ 
+			protected function editShips(e:BlmEvent):void{				
+				chosenShips=e.data as HashMap;//选中船舶的数组		
+				showShips();
+			}
+			
+			/**
+			 * 展示更新后的chosenShips中的船舶
+			 */ 
+			protected function showShips():void{
+				shipHGroup.removeAllElements();//清空组件
+				if(chosenShips.size()<1)
+					return;
+				var ships:Array=chosenShips.getValues();
+				while(ships.length){
+					var shipBtn:RepairItemShipButton = new RepairItemShipButton();
+					var ship:ShipObject=ships.pop() as ShipObject;
+					shipBtn.annex_dataProvide(ship);
+					shipBtn.width=80;
+					shipHGroup.addElement(shipBtn);
+					//添加监听		
+					shipBtn.addEventListener(RepairEventType.REPAIR_ITEM_DELETE_SHIP,deleteShip);//监听删除船舶
+					shipBtn.addEventListener(RepairEventType.REPAIR_ITEM_SHOW_SHIP_INFO,showShipInfo);//监听船舶点击					
+				}				
+				callLater(adjustLeftRightButton);
+			}
+			
+			/**
+			 * 设置船舶左右滑动按钮的可用情况
+			 * callLater 调用
+			 */ 
+			protected function adjustLeftRightButton():void{
+				shipLeftBtn.enabled=false;
+				if(shipHGroup.numChildren > shipHGroup.columnCount)//此处有BUG，不能动态显示个数
+					shipRightBtn.enabled=true;
+				else
+					shipRightBtn.enabled=false;				
+			}
+			/**
+			 * 删除船舶
+			 */ 
+			protected function deleteShip(e:BlmEvent):void{
+				currentShipBtn=e.data as RepairItemShipButton;
+				currentShip=new ShipObject();
+				currentShip.shipId=currentShipBtn.shipID;
+				currentShip.shipName=currentShipBtn.shipName.label;
+				
+				var shipVec:Vector.<ShipObject>=new Vector.<ShipObject>();
+				shipVec.push(chosenShips.getValue((e.data as RepairItemShipButton).shipID));
+				if(shipVec.length>0)
+					RepairModel.Instance.reqAddDelShip(currentItem.itemId,2,shipVec);				
+			}
+			
+			/**
+			 * 船舶名 点击处理事件
+			 * 设置当前点击的船舶
+			 * 显示船舶对应的CWBT信息还有设备信息，包括工作卡信息
+			 * ---处理船舶的点击
+			 */
+			protected function showShipInfo(e:BlmEvent):void{
+				addCWBTBtn.enabled=true;
+				delCWBTBtn.enabled=true;
+				
+				if(currentShipBtn != null)
+					currentShipBtn.shipName.selected=false;
+				currentShipBtn= e.data as RepairItemShipButton;				
+				currentShip=currentShipBtn.shipObj;
+				RepairItemControl.Instance.setcurrentShip(currentShip.shipId);//在control中设置当前船舶
+				turbineVGroup.removeAllElements();//清空当前显示
+				//显示设备信息
+				if(currentShip!=null){
+					var equipArray:Array=currentShip.equipMap.getValues();
+					while(equipArray.length){
+						var equipObj:EquipObject=equipArray.pop() as EquipObject;
+						var equipGroup:TurbineListItem=new TurbineListItem();
+						equipGroup.getData(currentItem.itemId,currentShip.shipId,equipObj);//传递信息（包括 工作卡信息）
+						turbineVGroup.addElement(equipGroup);					
+						equipGroup.addEventListener(RepairEventType.REPAIR_ITEM_GETEQUIP_BACK,setCurrentEquip);//监听，获取当前最新的设备
+					}
+				}
+			}
+			/**
+			 * 添加CWBT
+			 * 获取到cwbt的字符串以后，调用后台，添加cwbt
+			 */ 
+			protected function addCWBT(e:BlmEvent):void{
+				var cwbt:String=e.data as String;
+				var shipid:String=currentShip.shipId;
+				var equip:EquipObject=new EquipObject();
+				equip.equiqId=cwbt;//equip.equiqId 即是 cwbt
+				RepairModel.Instance.reqAddDelEquip(currentItem.itemId,1,shipid,equip);
+				
+			}
+			/**
+			 * 设置当前的设备
+			 */ 
+			protected function setCurrentEquip(e:BlmEvent):void{
+				currentEquipView=e.data as TurbineListItem;
+				currentEquip=new EquipObject();
+				currentEquip.equiqId=currentEquipView.equipID;
+				currentEquip.equipName=currentEquipView.equipName;		
+				
+				addCWBTBtn.enabled=true;
+				delCWBTBtn.enabled=true;
+			}
+			/**
+			 * 设施当前的工作卡
+			 */ 
+			protected function setCurrentWorkCardButton(e:BlmEvent):void{
+				if(currentWorkCardBtn!=null)
+					currentWorkCardBtn.workCardName.selected=false;
+				currentWorkCardBtn=e.data as RepairItemWorkcardButton;
+			}
+//--------------------------------------------------------------------------------------------------------			
+			/**
+			 * 显示提示信息
+			 * @param info 要显示的信息
+			 */ 
+			protected function showAlertInfo(info:String):void{
+				promrt = promrtWindow(PopUpManager.createPopUp(AppUtil.Instance.app,promrtWindow,true));
+				promrt.show(PromptEvent.ALERT,info);
+				PopUpManager.centerPopUp(promrt);
+				promrt.visible = true;
+			}
+			/**
+			 * 显示操作成功信息
+			 * @param info 要显示的信息
+			 */ 
+			protected function showPromptInfo(info:String):void{
+				promrt = promrtWindow(PopUpManager.createPopUp(AppUtil.Instance.app,promrtWindow,true));
+				promrt.show(PromptEvent.SUCCESS,info);
+				PopUpManager.centerPopUp(promrt);
+				promrt.visible = true;
+			}
+			/**
+			 * 显示确认删除信息
+			 * @param info 要显示的信息
+			 */ 
+			protected function showConfirmOperateInfo(info:String):void{
+				promrt = promrtWindow(PopUpManager.createPopUp(AppUtil.Instance.app,promrtWindow,true));
+				promrt.show(PromptEvent.DELALERT,info);
+				PopUpManager.centerPopUp(promrt);
+				promrt.visible = true;
+			}
+	//--------------后台-返回处理------------------------------------------------------
+			/**
+			 * 编辑修理项 成功
+			 * 修改当前修理项的内容，并恢复显示
+			 */ 
+			public function editItemSuccess():void{
+				saveInfoFlag=-1;
+				currentItem.itemName=nameText.text;
+				currentItem.content=contentText.text;
+				
+				saveBtn.setVisible(false);
+				cancelBtn.setVisible(false);
+				editIconBtn.setVisible(true);
+				deleteIconBtn.setVisible(true);				
+				nameLabel.text=nameText.text;
+				nameText.text="";
+				nameText.visible=false;
+				nameLabel.visible=true;
+				contentText.editable=false;
+				this.showPromptInfo("修改成功！");
+			}
+			/**
+			 * 编辑修理项 失败
+			 * 恢复数据显示
+			 */ 
+			public function editItemFail():void{
+				saveInfoFlag=-1;
+				
+				saveBtn.setVisible(false);
+				cancelBtn.setVisible(false);
+				editIconBtn.setVisible(true);
+				deleteIconBtn.setVisible(true);				
+				nameLabel.text=currentItem.itemName;
+				nameText.text="";
+				nameText.visible=false;
+				nameLabel.visible=true;
+				contentText.text=currentItem.content;
+				contentText.editable=false;
+				this.showAlertInfo("修改失败，请稍后再试...");
+			}
+			/**
+			 * 删除修理项 成功 
+			 * 直接关闭窗口
+			 */ 
+			public function deleteItemSucess():void{
+				blmtitlewindow_closeHandler();
+			}
+			/**
+			 * 删除修理项 失败
+			 */
+			public function deleteItemFail():void{
+				this.showAlertInfo("删除失败，请稍后再试...");
+			}
+			//----------------船舶-------------------
+			/**
+			 * 添加船舶 成功
+			 * 
+			 */ 
+			public function ADDShipSucess(shipMap:HashMap):void{		
+				chosenShips=new HashMap();
+				chosenShips=shipMap;
+				showShips();
+				this.showPromptInfo("添加成功！");
+			}
+			/**
+			 * 添加船舶 失败
+			 * 
+			 */ 
+			public function ADDShipFail():void{
+				this.showAlertInfo("添加发生错误，请稍后重试...");
+			}
+			/**
+			 * 删除船舶 成功
+			 * 
+			 */ 
+			public function DeleteShipSucess():void{		
+				chosenShips.remove(currentShip.shipId);
+				shipHGroup.removeElement(currentShipBtn);
+				turbineVGroup.removeAllElements();
+				this.showPromptInfo("删除成功！");
+			}
+			/**
+			 * 批量删除船舶 成功
+			 * 
+			 */ 
+			public function DeleteShipVecSucess(shipMap:HashMap):void{		
+				chosenShips=new HashMap();
+				chosenShips=shipMap;
+				callLater(showShips);
+				this.showPromptInfo("删除成功！");
+			}
+			/**
+			 * 删除船舶 失败
+			 * 
+			 */ 
+			public function DeleteShipFail():void{
+				this.showAlertInfo("删除发生错误，请稍后重试...");
+			}
+			//----------------设备-------------------
+			/**
+			 * 新建设备成功
+			 * 
+			 */ 
+			public function ADDEquipSucess(equip:EquipObject):void{				
+				var equipView:TurbineListItem=new TurbineListItem();
+				equipView.getData(currentItem.itemId,currentShip.shipId,equip);
+				turbineVGroup.addElement(equipView);
+				equipView.addEventListener(RepairEventType.REPAIR_ITEM_GETEQUIP_BACK,setCurrentEquip);
+				equipView.addEventListener(RepairEventType.REPAIR_ITEM_DELETE_WORKCARD,setCurrentWorkCardButton);
+				this.showPromptInfo("新建设备成功！");
+			}
+			/**
+			 * 新建设备 失败
+			 * 
+			 */ 
+			public function ADDEquipFail():void{
+				this.showAlertInfo("新建发生错误，请稍后重试...");
+			}
+			/**
+			 * 删除设备成功
+			 * 
+			 */ 
+			public function DelEquipSucess():void{		
+				turbineVGroup.removeElement(currentEquipView);
+				this.showPromptInfo("删除成功！");
+			}
+			/**
+			 * 删除设备 失败
+			 * 
+			 */ 
+			public function DelEquipFail():void{
+				this.showAlertInfo("删除发生错误，请稍后重试...");
+			}
+			//----------------工作卡-------------------
+			/**
+			 * 传递获取到的工作卡列表
+			 */ 
+			public function SendWorkCards(tempHash:HashMap):void{
+				if(currentEquipView!=null){
+					currentEquipView.getWorkCardList(tempHash);
+				}
+			}
+			/**
+			 * 新建工作卡 成功
+			 * 获取所有的工作卡，然后更新
+			 */ 
+			public function ADDWorkCardSucess(workCardMap:HashMap):void{
+				currentEquipView.editCards(workCardMap);
+				this.showPromptInfo("新建工作卡成功！");
+			}
+			/**
+			 * 新建工作卡 失败
+			 * 
+			 */ 
+			public function ADDWorkCardFail():void{
+				this.showAlertInfo("新建发生错误，请稍后重试...");
+			}
+			/**
+			 * 删除工作卡成功
+			 * 
+			 */ 
+			public function DelWorkCardSucess(workCardMap:HashMap):void{		
+				//点击的时候，获取当前的工作卡按钮
+				currentEquipView.editCards(workCardMap);
+				this.showPromptInfo("删除成功！");
+			}
+			/**
+			 * 删除工作卡 失败
+			 * 
+			 */ 
+			public function DelWorkCardFail():void{
+				this.showAlertInfo("删除发生错误，请稍后重试...");
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<s:Animate id="anmiate" target="{shipHGroup}" duration="100" >
+			<s:motionPaths>
+				<s:SimpleMotionPath id="smp" property="horizontalScrollPosition"/>
+			</s:motionPaths>
+		</s:Animate>		
+	</fx:Declarations>
+	
+	<s:Group id="rightPage" left="0" right="0" top="0" bottom="0">
+		<s:Label y="36" left="29" text="代码："/>
+		<s:Label id="codeLabel" y="36" left="69"/>
+		<s:TextArea id="codeText" visible="false" y="30" left="69" width="70" height="20"/>
+		<s:Label y="36" left="189" text="名称："/>
+		<s:Label id="nameLabel" y="36" left="229"/>
+		<s:TextArea id="nameText" visible="false" y="30" left="229" width="80" height="20"/>
+		<s:Label y="36" left="450" text="所属类型："/>
+		<s:Label id="categoryLabel" y="36" left="510"/>
+		<button:blmBarrelButton id="deleteIconBtn" visible="false" right="60" top="13" width="20" height="20"
+								click="deleteIconBtn_clickHandler(event)"/>
+		<button:blmEditButton id="editIconBtn" visible="false" right="30" top="10" width="20" height="20"
+							  click="editIconBtn_clickHandler(event)"/>
+		<button:blmSaveButton id="saveBtn" visible="false" right="60" top="10" width="20"
+							  height="20" label="保存" click="saveBtn_clickHandler()"/>
+		<button:blmCancelButton id="cancelBtn" visible="false" right="30" top="10" width="20"
+								height="20" label="放弃" click="cancelBtn_clickHandler(event)"/>
+		<s:Label left="29" top="70" text="内容："/>
+		<s:TextArea id="contentText" left="69" right="20" top="70" height="150" editable="false"/>
+		<s:Label x="29" bottom="203" text="船舶："/>
+		
+		<s:Button id="shipLeftBtn" left="80" bottom="195" width="20" height="20"
+				  click="shipLeftBtn_clickHandler(event)" enabled="false"
+				  skinClass="com.boloomo.emop.component.button.skin.SubLeftBtnSkin"/>
+		<s:HGroup id="shipHGroup" bottom="200" width="556" height="22" clipAndEnableScrolling="true"
+				  gap="20" horizontalCenter="10" verticalAlign="middle">
+		</s:HGroup>
+		<s:Button id="shipRightBtn" right="60" bottom="195" width="20" height="20"
+				  click="shipRightBtn_clickHandler(event)" enabled="false"
+				  skinClass="com.boloomo.emop.component.button.skin.SubRightBtnSkin"/>
+		
+		<button:blmAddButton right="20" bottom="200" width="20" height="20"
+							 click="addShipButton_clickHandler(event)"/>
+		<s:Group id="bottomGroup" left="29" right="20" bottom="20" height="150">
+			
+			<s:Rect x="0" y="0"
+					radiusX="1" radiusY="1"
+					height="100%" width="100%">				
+				<!--边框线条设计-->
+				<s:stroke>
+					<s:LinearGradientStroke weight="1" scaleMode="normal"/>
+				</s:stroke>
+				
+			</s:Rect> 
+			<s:Scroller top="5" bottom="25" width="100%">
+				<s:VGroup id="turbineVGroup" width="100%" height="100%" requestedRowCount="4" gap="5">
+				</s:VGroup>		
+			</s:Scroller>
+			
+			<s:HGroup left="5" right="0" bottom="1" height="20">
+				<button:blmAddButton id="addCWBTBtn" left="10" width="20" height="20" verticalCenter="0" enabled="false"
+									 click="addCWBT_clickHandler(event)"/>
+				<mx:VRule height="80%" width="2" verticalCenter="0"/>
+				<button:blmDeleteButton id="delCWBTBtn" width="20" height="20" verticalCenter="0" enabled="false"
+										click="deleteCWBT_clickHandler(event)"/> 
+			</s:HGroup>
+		</s:Group>
+	</s:Group>
+	
+</titlewindow:blmTitleWindow>

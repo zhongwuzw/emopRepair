@@ -146,7 +146,8 @@
 				}
 				if(addWorkCardVec.length>0)
 					RepairModel.Instance.reqAddDelWorkCard(this.itemID,1,this.shipID,this.equipID,addWorkCardVec);//添加
-//				//				RepairModel.Instance.reqAddDelShip(itemID,2,delshipVec);//删除
+				if(delWorkCardVec.length>0)
+					RepairModel.Instance.reqAddDelWorkCard(this.itemID,2,this.shipID,this.equipID,addWorkCardVec);//删除
 				
 				//				this.dispatchEvent(new BlmEvent(RepairEventType.REPAIR_ITEM_SELECT_EDIT_SHIP,selectedWorkCards));
 				PopUpManager.removePopUp(this);
@@ -181,7 +182,7 @@
 			  click="confirm_clickHandler(event)"/>
 	<s:Button id="cancel" right="20" bottom="10" label="取消"
 			  click="cancel_clickHandler(event)"/>
-
+	
 	<mx:List id="workcardList" left="10" right="10" top="10" bottom="40" alternatingItemColors="[0xf9f6f6,0xd7e8fa]"
 			 dataProvider="{chosenWorkCardFlagArray}" horizontalScrollPolicy="auto" verticalScrollPolicy="auto">
 		<mx:itemRenderer>

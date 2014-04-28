@@ -62,7 +62,7 @@
 		
 		<!--tree控件中的图标默认绑定系统图标，如果有喜欢图标只需要改变下source属性值-->
 		<s:Group id="disclosureGroup">
-			<s:BitmapImage source="{treeListData.disclosureIcon}" visible="{treeListData.hasChildren}" />
+			<s:BitmapImage source="{treeListData.disclosureIcon}" visible="{Number(treeListData.item.@nchild)!=0}" />
 		</s:Group>
 		
 		<!--tree 这 个就 是 我们 每 个 item 的 最左 边 的文 件 图标 ， 可以 动 态获 取 数据 的 图像URL-->

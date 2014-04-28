@@ -16,6 +16,7 @@ package com.boloomo.emop.repair.control
 	import com.boloomo.util.AppUtil;
 	import com.boloomo.util.maps.HashMap;
 	
+	import mx.collections.ArrayCollection;
 	import mx.collections.XMLListCollection;
 	import mx.managers.PopUpManager;
 	
@@ -34,7 +35,7 @@ package com.boloomo.emop.repair.control
 		private var _addDelShipVec:Vector.<ShipObject>=new Vector.<ShipObject>;//储存增加或者删除的ship  vector
 		private var _addDelWorkCardVec:Vector.<WorkCardObject>=new Vector.<WorkCardObject>;//储存增加或者删除的ship  vector
 		private var _addDelCwbt:EquipObject=new EquipObject();//储存增加或者删除的cwbt
-		
+				
 		public function RepairItemControl()
 		{
 			if(g_Instance)
@@ -118,7 +119,8 @@ package com.boloomo.emop.repair.control
 		 * 把解析后的数据存储在_repairItem中
 		 */	
 		public function onHandleRepairItem(jasonStr:String):void{//jasonStr = "{seq:"D",info:[{cateid:"D",caten:"坞修工程",item:[{itemid:"D",itemn:"坞修工程"},{itemid:"D-100",itemn:"坞修工程说明"},{itemid:"D-200",itemn:"船体表面处理"},{itemid:"D-201",itemn:"动力磨轮清洁"},{itemid:"D-202",itemn:"人工手铲，去除污物"},{itemid:"D-203",itemn:"对船壳板进行颗粒喷沙，达到SA 2.5 标准"},{itemid:"D-204",itemn:"对船壳板进行颗粒喷沙，达到SA 2.0 标准"},{itemid:"D-205",itemn:"对船壳板进行颗粒喷沙，达到SA 1.0 标准"},{itemid:"D-206",itemn:" 船壳油漆"},{itemid:"D-207",itemn:"轻重载水线间部分"},
-			var obj:Object = BlmJSON.decode(jasonStr); if(obj == null){return;}
+			var obj:Object = BlmJSON.decode(jasonStr); 
+			if(obj == null){return;}
 			if(obj.eid)
 				return;
 			//			if(obj.seq!=this._currentCategory.cateId)
@@ -150,33 +152,37 @@ package com.boloomo.emop.repair.control
 		 */	
 		//		{seq:””,itemid:””,itemna:””,content:””,ships:[{id:””,name:””,equips:[{idcwbt:””,na:””,wcs:[{id:””,level:””,owner:””},{}]}, {}] },{}};
 		public function onHandleDetailRepairItem(jasonStr:String):void{//ships:[{id:"",name:"",equips:[]},{id:"",name:"",equips:[]},{id:"",name:"",equips:[]},{id:"",name:"",equips:[]},{id:"",name:"",equips:[]},{id:"",name:"",equips:[]}]}"
-			var obj:Object = BlmJSON.decode(jasonStr); 
-			if(obj == null){return;}
-			if(obj.eid)
-				return;
-			var tempItemObj:ItemObject=ItemObject.parseDetail(obj);
-			var tempShipArray:Array=obj.ships;
-			for(var i:int=0;i<tempShipArray.length;i++)
-			{
-				var tempShipObj:ShipObject=ShipObject.parse(tempShipArray[i]);
-				var tempEquipArray:Array=tempShipArray[i].equips;
-				for(var j:int=0;j<tempEquipArray.length;j++)
+			var obj:Object = BlmJSON.decode(jasonStr);	
+			if(obj.seq=="seq03")
+				BlmEventManager.Instance.dispatchEvent(new BlmEvent(RepairEventType.REPAIR_ITEM_DELIVER_TO_REPAIRLIST,jasonStr));
+			else{				
+				if(obj == null){return;}
+				if(obj.eid)
+					return;
+				var tempItemObj:ItemObject=ItemObject.parseDetail(obj);
+				var tempShipArray:Array=obj.ships;
+				for(var i:int=0;i<tempShipArray.length;i++)
 				{
-					var tempEquip:EquipObject=EquipObject.parse(tempEquipArray[j]);
-					var tempWorkCardArray:Array=tempEquipArray[j].wcs;
-					for(var k:int=0;k<tempWorkCardArray.length;k++)
+					var tempShipObj:ShipObject=ShipObject.parse(tempShipArray[i]);
+					var tempEquipArray:Array=tempShipArray[i].equips;
+					for(var j:int=0;j<tempEquipArray.length;j++)
 					{
-						var tempWorlCard:WorkCardObject=WorkCardObject.parseInit(tempWorkCardArray[k]);
-						tempEquip.workCardMap.put(tempWorlCard.workCardId,tempWorlCard);
+						var tempEquip:EquipObject=EquipObject.parse(tempEquipArray[j]);
+						var tempWorkCardArray:Array=tempEquipArray[j].wcs;
+						for(var k:int=0;k<tempWorkCardArray.length;k++)
+						{
+							var tempWorlCard:WorkCardObject=WorkCardObject.parseInit(tempWorkCardArray[k]);
+							tempEquip.workCardMap.put(tempWorlCard.workCardId,tempWorlCard);
+						}
+						tempShipObj.equipMap.put(tempEquip.equiqId,tempEquip);
 					}
-					tempShipObj.equipMap.put(tempEquip.equiqId,tempEquip);
+					tempItemObj.shipMap.put(tempShipObj.shipId,tempShipObj);
 				}
-				tempItemObj.shipMap.put(tempShipObj.shipId,tempShipObj);
+				this._currentItem.clear();
+				this._currentItem=tempItemObj;
+				this._repairItem.categoryMap.getValue(this._currentCategory.cateId).itemMap.put(tempItemObj.itemId,tempItemObj);
+				this.refreshRepairItemDetail();
 			}
-			this._currentItem.clear();
-			this._currentItem=tempItemObj;
-			this._repairItem.categoryMap.getValue(this._currentCategory.cateId).itemMap.put(tempItemObj.itemId,tempItemObj);
-			this.refreshRepairItemDetail();
 		}
 		/*
 		/**
@@ -281,8 +287,8 @@ package com.boloomo.emop.repair.control
 			var tempItemArray:Array;
 			if(obj.eid==0 && obj.etype==1){//失败：修理项代码已经存在
 				this._currentItem.clear();
-//				tempItemArray=this._repairItem.categoryMap.getValue(this._currentCategory.cateId).itemMap.getValues;
-//				this._currentItem=tempItemArray[0];	//获取当前类别第一个修理项
+				//				tempItemArray=this._repairItem.categoryMap.getValue(this._currentCategory.cateId).itemMap.getValues;
+				//				this._currentItem=tempItemArray[0];	//获取当前类别第一个修理项
 				this.refreshRepairItemRepeat();//处理重复提交
 			}
 			if(obj.eid!=0){//操作失败
@@ -394,7 +400,7 @@ package com.boloomo.emop.repair.control
 			{
 				for(var j:int=0;j<_addDelShipVec.length;j++)
 					((this._repairItem.categoryMap.getValue(this._currentCategory.cateId) as CategoryObject).itemMap.getValue(this._currentItem.itemId) as ItemObject).shipMap.remove(_addDelShipVec[j].shipId);//remove key
-//				this._currentShip=this._repairItem.categoryMap.getValue(this._currentCategory.cateId).itemMap.getValue(this._currentItem.itemId).shipMap.getValues[0];
+				//				this._currentShip=this._repairItem.categoryMap.getValue(this._currentCategory.cateId).itemMap.getValue(this._currentItem.itemId).shipMap.getValues[0];
 				this.refreshDELShipListSuccess();
 			}
 		}
@@ -405,8 +411,8 @@ package com.boloomo.emop.repair.control
 		 * @author zhoucd
 		 */ 
 		public function setcurrentShip(shipID:String):void{
-//			_currentCategory=_repairItem.categoryMap.getValue(cateID) as CategoryObject;
-//			_currentItem=_currentCategory.itemMap.getValue(itemID) as ItemObject;	
+			//			_currentCategory=_repairItem.categoryMap.getValue(cateID) as CategoryObject;
+			//			_currentItem=_currentCategory.itemMap.getValue(itemID) as ItemObject;	
 			_currentShip=_currentItem.shipMap.getValue(shipID);
 		}
 		
@@ -475,8 +481,8 @@ package com.boloomo.emop.repair.control
 		 */	
 		public function onHandleDelRepairItem(jasonStr:String):void
 		{
-			var obj:Object = BlmJSON.decode(jasonStr); if(obj == null){return;}
-			
+			var obj:Object = BlmJSON.decode(jasonStr); 
+			if(obj == null){return;}			
 			if(obj.eid!=0){//----删除失败
 				this.refreshRepairItem_FailDEL();
 				return;
@@ -516,6 +522,7 @@ package com.boloomo.emop.repair.control
 		{
 			var root:XML=<root></root>;
 			var RepairItemList:Array = _currentCategory.itemMap.getValues();
+			RepairItemList.sort(RepairItemTreeUtils.sortByItemCode);		
 			while(RepairItemList.length){
 				var item:ItemObject=RepairItemList.pop() as ItemObject;
 				var xml:XML=RepairItemTreeUtils.ItemObjectToXML(item);
@@ -616,7 +623,7 @@ package com.boloomo.emop.repair.control
 		 */
 		private function refreshDELShipListSuccess():void
 		{
-			repairItemView.DeleteShipSucess();
+			repairItemView.DeleteShipVecSucess(((this._repairItem.categoryMap.getValue(this._currentCategory.cateId) as CategoryObject).itemMap.getValue(this._currentItem.itemId) as ItemObject).shipMap);
 		}
 		/**
 		 * 刷新船舶列表
