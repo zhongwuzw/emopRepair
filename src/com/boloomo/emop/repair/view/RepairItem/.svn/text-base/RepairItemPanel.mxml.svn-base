@@ -24,6 +24,7 @@
 			import com.boloomo.util.maps.HashMap;
 			
 			import mx.controls.Alert;
+			import mx.controls.List;
 			import mx.events.CloseEvent;
 			import mx.events.FlexEvent;
 			import mx.events.ListEvent;
@@ -100,6 +101,19 @@
 			protected function RepairItemTree_itemClickHandler(event:ListEvent):void
 			{			
 				selectedTreeNode=XML(RepairItemTree.selectedItem);	
+				//				var temp:XMLListCollection=new XMLListCollection();
+				//				temp.source=selectedTreeNode.elements("*") as XMLList;
+				//				//默认在只有一项的时候，打开目录和项目详情
+				//				if((selectedTreeNode.@level ==1) &&(temp.length == 1) ){
+				//					for each (var treeItem:XML in selectedTreeNode.children())  
+				//					{  
+				//						RepairItemTree.selectedItem=treeItem;  
+				//						selectedTreeNode=treeItem;
+				//						itemTableArray.removeAll();	
+				//						itemTableArray.addItem({category:selectedTreeNode.@label,code:tempXML.@code,name:tempXML.@name,content:tempXML.@text});
+				//						itemTableArray.refresh();
+				//					}  
+				//				}
 				if(selectedTreeNode.@level==1){
 					itemTableGroup.visible=true;
 					currentCategory.clear();
@@ -123,7 +137,7 @@
 					}
 				}else if(selectedTreeNode.@level==2){
 					addTreeLeafBtn.enabled=false;
-					itemTableGroup.visible=false;
+	//				itemTableGroup.visible=false;
 					
 					var parentNode:XML=selectedTreeNode.parent() as XML;
 					currentCategory.clear();
@@ -171,7 +185,9 @@
 			private function addTreeNode(node:XML):void{ 
 				
 				selectedTreeNode=XML(RepairItemTree.selectedItem);
-				selectedTreeNode[0].appendChild(node);
+				//	selectedTreeNode[0].appendChild(node);
+				selectedTreeNode.appendChild(node);
+				
 				RepairItemTree.expandChildrenOf(RepairItemTree.selectedItem,true);			
 			}			
 			/**
@@ -231,6 +247,7 @@
 				}
 				itemTableArray.refresh();
 				RepairItemTree.enabled=true;
+				RepairItemTree.validateNow();
 			}
 			/**
 			 * 后台返回调用
@@ -257,10 +274,25 @@
 			public function AddTreeNodeSuccess(xml:XML):void{							
 				RepairItemTree.enabled=true;//恢复树的可操作性	
 				RepairItemTree.enabled=false;		
+				//新建节点插入到最前面
+				selectedTreeNode=XML(RepairItemTree.selectedItem);
+				selectedTreeNode.insertChildAfter(null,xml);
+				RepairItemTree.expandChildrenOf(RepairItemTree.selectedItem,true);	
 				
-				addTreeNode(xml);				
-				itemTableArray.addItem({category:selectedTreeNode.@label,code:xml.@code,name:xml.@name,content:xml.@text});				
+				for each(var tempXML:XML in selectedTreeNode.children()){
+					if(tempXML == xml){
+						RepairItemTree.selectedItem=tempXML;
+						selectedTreeNode=tempXML;
+						break;
+					}
+				}
+				
+				itemTableArray.addItemAt({category:currentCategory.cateName,code:xml.@code,name:xml.@name,content:xml.@text},0);				
 				itemTableArray.refresh();
+				//新建节点，已选目录
+				selectedTreeNode=XML(RepairItemTree.selectedItem);
+				var tempNum:Number=Number(selectedTreeNode.@nchild)+1;
+				selectedTreeNode.@nchild=""+tempNum;
 				
 				RepairItemTree.enabled=true;
 				this.showPromptInfo("新建成功！");
@@ -280,7 +312,6 @@
 			 */ 
 			public function EditTreeNodeSucess(xml:XML):void{
 				
-				selectedTreeNode=XML(RepairItemTree.selectedItem)
 				selectedTreeNode.@label=xml.@label;
 				selectedTreeNode.@code=xml.@code;
 				selectedTreeNode.@name=xml.@name;
@@ -321,17 +352,19 @@
 			public function DeleteRepairItemSuccess():void{
 				var i:int;
 				var childrenList:XMLListCollection;
+				var parentNode:XML=RepairItemTree.getParentItem(selectedTreeNode) as XML;
 				
-				//------树暂时有BUG
-				if(itemTableArray.length==1){//只有一个修理项，默认点击是 整个树
-					childrenList=new XMLListCollection(XMLList(selectedTreeNode).children());
-				}else{
-					var parentNode:XML=RepairItemTree.getParentItem(RepairItemTree.selectedItem) as XML;
-					childrenList=new XMLListCollection(XMLList(parentNode).children());
+				//BUG...点击后currentItem会被清空，可能是与后台的数据名重复？
+				if(currentItem.itemId==""){
+					currentItem.itemId=selectedTreeNode.@code;
+					currentItem.itemName=selectedTreeNode.@name;
+					currentItem.content=selectedTreeNode.@text;
 				}
+				
+				childrenList=new XMLListCollection(XMLList(parentNode).children());
 				i=childrenList.getItemIndex(selectedTreeNode);
 				childrenList.removeItemAt(i);
-								
+				
 				for(i=0;i<itemTableArray.length;i++){
 					if(itemTableArray[i].code == currentItem.itemId){
 						itemTableArray.removeItemAt(i);
@@ -339,6 +372,9 @@
 					}					
 				}
 				itemTableArray.refresh();
+				
+				var tempNum:Number=Number(parentNode.@nchild)-1;
+				parentNode.@nchild=""+tempNum;
 				
 				showRepairItemDetailView.deleteItemSucess();
 				this.showPromptInfo("删除成功！");
@@ -461,6 +497,21 @@
 				
 				openPanelFlag=2;//设置打开方式为 显示修理项详情
 				
+				//如果没有选中树节点，动态选中(当前选中的是目录)			
+				if(selectedTreeNode.@level == 2)
+					selectedTreeNode=selectedTreeNode.parent() as XML;
+				for each (var treeItem:XML in selectedTreeNode.children())  
+				{  
+					//选中并获取相关信息  
+					if (treeItem.@code == currentItem.itemId)  
+					{  
+						RepairItemTree.selectedItem=treeItem;  
+						selectedTreeNode=treeItem;
+						break;  
+					}  
+					
+				}  
+				
 				if(showRepairItemDetailView == null || showRepairItemDetailView.visible==false)
 				{
 					showRepairItemDetailView = RepairItemDetailPanel(PopUpManager.createPopUp(AppUtil.Instance.app,RepairItemDetailPanel,true));
@@ -490,17 +541,13 @@
 		</s:ArrayCollection>
 	</fx:Declarations>
 	<mx:Canvas left="0" top="0" bottom="0" width="350" backgroundColor="0xF0F3F5">
-		<s:Group id="addItemGroupView" left="0" right="0" bottom="0" height="30">
-			<button:blmAddButton id="addTreeLeafBtn" left="10" width="20" height="20" enabled="false"
-								 verticalCenter="0" click="addTreeLeafBtn_clickHandler(event)"/>
-		</s:Group>
-		<mx:Tree id="RepairItemTree" left="0" right="0" top="0" bottom="30" contentBackgroundAlpha="0"
+		<mx:Tree id="RepairItemTree" left="0" right="0" top="0" bottom="0" contentBackgroundAlpha="0"
 				 itemClick="RepairItemTree_itemClickHandler(event)"
 				 itemRenderer="com.boloomo.emop.repair.view.RepairItem.RepairTreeItemRenderer"
 				 labelField="@label">
 		</mx:Tree>
 	</mx:Canvas>
-	<s:Group id="itemTableGroup" left="350" right="0" top="0" bottom="0" visible="false">
+	<s:Group id="itemTableGroup" left="350" right="0" top="0" bottom="30" visible="false">
 		<mx:DataGrid id="itemTable" left="10" right="10" top="10" bottom="10" 
 					 doubleClickEnabled="true" doubleClick="itemTable_doubleClickHandler(event)"
 					 verticalScrollPolicy="auto" dataProvider="{itemTableArray}" 
@@ -512,6 +559,11 @@
 				<mx:DataGridColumn headerText="内容" dataField="content" textAlign="left"/>
 			</mx:columns>	
 		</mx:DataGrid>
+	</s:Group>
+	<s:Group id="addItemGroupView" left="350" right="0" bottom="0" height="30">
+		<button:blmAddButton id="addTreeLeafBtn" left="10" width="20" height="20" enabled="false"
+							 verticalCenter="0" click="addTreeLeafBtn_clickHandler(event)"/>
+		<s:Label right="50" text="共 {itemTableArray.length} 个" verticalCenter="0"/>
 	</s:Group>
 </titlewindow:blmTitleWindow>
 

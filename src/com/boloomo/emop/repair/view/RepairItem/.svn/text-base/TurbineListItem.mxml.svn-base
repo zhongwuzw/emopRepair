@@ -39,36 +39,57 @@
 			 * 设置船舶左右滑动按钮的可用情况
 			 * callLater 调用
 			 */ 
-			protected function adjustLeftRightButton():void{
-				shipLeftBtn.enabled=false;
+			public function adjustLeftRightButton():void{
+				workCardHGroup.validateNow();
+				WorkCardLeftBtn.enabled=false;
+				trace("---"+workCardHGroup.firstIndexInView);
+				trace("---"+workCardHGroup.lastIndexInView);
+				trace("---"+workCardHGroup.numAutomationChildren);
+				trace("---"+workCardHGroup.numChildren);
+				trace("---"+workCardHGroup.numElements);
 				if(workCardHGroup.numChildren > workCardHGroup.columnCount)//此处有BUG，不能动态显示个数
-					shipRightBtn.enabled=true;
+					WorkCardRightBtn.enabled=true;
 				else
-					shipRightBtn.enabled=false;				
+					WorkCardRightBtn.enabled=false;				
 			}
 			
 			/**
 			 * 轮机 HGroup
 			 * 向左滚动
 			 */ 
-			protected function shipLeftBtn_clickHandler(event:MouseEvent):void
+			protected function WorkCardLeftBtn_clickHandler(event:MouseEvent):void
 			{
 				// TODO Auto-generated method stub
 				RepairItemControl.Instance.setCurrentEquip(this.equipID);
 				smp.valueBy = workCardHGroup.getHorizontalScrollPositionDelta(NavigationUnit.LEFT);
 				anmiate.play();
 				
+				if(workCardHGroup.firstIndexInView == 1){
+					WorkCardLeftBtn.enabled=false;
+				}else{					
+					WorkCardLeftBtn.enabled=true;
+				}
+				
+				WorkCardRightBtn.enabled=true;
+				
 			}
 			/**
 			 * 轮机 HGroup
 			 * 向右滚动
 			 */ 
-			protected function shipRightBtn_clickHandler(event:MouseEvent):void
+			protected function WorkCardRightBtn_clickHandler(event:MouseEvent):void
 			{
 				// TODO Auto-generated method stub
 				RepairItemControl.Instance.setCurrentEquip(this.equipID);
 				smp.valueBy = workCardHGroup.getHorizontalScrollPositionDelta(NavigationUnit.RIGHT);
 				anmiate.play();
+
+				if(workCardHGroup.lastIndexInView == workCardHGroup.numChildren-2){
+					WorkCardRightBtn.enabled=false;
+				}else{					
+					WorkCardRightBtn.enabled=true;
+				}				
+				WorkCardLeftBtn.enabled=true;
 				
 			}
 			/**
@@ -146,11 +167,13 @@
 					workCardBtn.annex_dataProvide(workcard);
 					workCardBtn.width=80;
 					workCardHGroup.addElement(workCardBtn);
+					workCardBtn.validateNow();
 					//添加监听		
 					workCardBtn.addEventListener(RepairEventType.REPAIR_ITEM_DELETE_WORKCARD,deleteWorkcard);//删除工作卡
 					workCardBtn.addEventListener(RepairEventType.REPAIR_ITEM_SHOW_WORKCARD_INFO,showWorkCardInfo);//显示工作卡信息					
-				}				
-				callLater(adjustLeftRightButton);
+				}		
+				workCardHGroup.validateNow();
+	//			callLater(adjustLeftRightButton);
 			}
 			//---------------------------------------------------------------------------------------	
 			/**
@@ -205,12 +228,12 @@
 	<s:Label id="equipLabel" text="{equipName}" x="10" verticalCenter="0"
 			 buttonMode="true" useHandCursor="true" textDecoration="underline"
 			 click="equipLabel_clickHandler(event)"/>
-	<s:Button id="shipLeftBtn" left="{equipLabel.width+20}" click="shipLeftBtn_clickHandler(event)" enabled="false"
+	<s:Button id="WorkCardLeftBtn" left="{equipLabel.width+20}" click="WorkCardLeftBtn_clickHandler(event)" enabled="false"
 			  skinClass="com.boloomo.emop.component.button.skin.SubLeftBtnSkin" verticalCenter="0"/>
 	<s:HGroup id="workCardHGroup" left="{equipLabel.width+50}" right="60" height="25" clipAndEnableScrolling="true"
 			  gap="4" verticalAlign="middle" verticalCenter="0">
 	</s:HGroup>
-	<s:Button id="shipRightBtn" right="35" width="20" click="shipRightBtn_clickHandler(event)" enabled="false"
+	<s:Button id="WorkCardRightBtn" right="35" width="20" click="WorkCardRightBtn_clickHandler(event)" enabled="false"
 			  skinClass="com.boloomo.emop.component.button.skin.SubRightBtnSkin" verticalCenter="0"/>
 	<button:blmAddButton right="10" width="21" height="20" verticalCenter="0"
 						 click="blmaddbutton_clickHandler(event)"/>

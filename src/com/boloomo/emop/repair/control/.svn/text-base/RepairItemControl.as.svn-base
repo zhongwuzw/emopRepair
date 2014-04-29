@@ -95,7 +95,8 @@ package com.boloomo.emop.repair.control
 		 */	
 		//		{seq：“”，info：[{cateid：“”，caten：“”} {},{}]}
 		public function onHandleRepairItemCate(jasonStr:String):void{
-			var obj:Object = BlmJSON.decode(jasonStr); if(obj == null){return;}
+			var obj:Object = BlmJSON.decode(jasonStr); 
+			if(obj == null){return;}
 			if(obj.eid)
 				return;
 			var categoryArray:Array=obj.info;
@@ -153,10 +154,10 @@ package com.boloomo.emop.repair.control
 		//		{seq:””,itemid:””,itemna:””,content:””,ships:[{id:””,name:””,equips:[{idcwbt:””,na:””,wcs:[{id:””,level:””,owner:””},{}]}, {}] },{}};
 		public function onHandleDetailRepairItem(jasonStr:String):void{//ships:[{id:"",name:"",equips:[]},{id:"",name:"",equips:[]},{id:"",name:"",equips:[]},{id:"",name:"",equips:[]},{id:"",name:"",equips:[]},{id:"",name:"",equips:[]}]}"
 			var obj:Object = BlmJSON.decode(jasonStr);	
+			if(obj == null){return;}
 			if(obj.seq=="seq03")
 				BlmEventManager.Instance.dispatchEvent(new BlmEvent(RepairEventType.REPAIR_ITEM_DELIVER_TO_REPAIRLIST,jasonStr));
 			else{				
-				if(obj == null){return;}
 				if(obj.eid)
 					return;
 				var tempItemObj:ItemObject=ItemObject.parseDetail(obj);
@@ -258,7 +259,9 @@ package com.boloomo.emop.repair.control
 			_beforeEditItem.content	=_currentItem.content;
 			_beforeEditItem.itemId	=_currentItem.itemId;
 			_beforeEditItem.itemName=_currentItem.itemName;
-			_currentItem.clear();
+			_beforeEditItem.shipMap=_currentItem.shipMap;
+			_beforeEditItem.equipMap=_currentItem.equipMap;
+//			_currentItem.clear();
 			_currentItem.content=content;
 			_currentItem.itemId=itemid;
 			_currentItem.itemName=itemn;
@@ -315,6 +318,8 @@ package com.boloomo.emop.repair.control
 						refreshRepairItem_ADD();
 						break;
 					case "2"://修改修理项，注意使用之前刷新_currentItem 并将新增的名字存入。使用set函数
+						_currentItem.shipMap=_beforeEditItem.shipMap;
+						_currentItem.equipMap=beforeEditItem.equipMap;
 						this._repairItem.categoryMap.getValue(this._currentCategory.cateId).itemMap.remove(this._beforeEditItem.itemId);
 						this._repairItem.categoryMap.getValue(this._currentCategory.cateId).itemMap.put(this._currentItem.itemId,this._currentItem);
 						refreshRepairItem_Edit();

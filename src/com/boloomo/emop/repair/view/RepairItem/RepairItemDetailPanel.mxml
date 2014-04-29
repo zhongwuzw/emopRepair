@@ -379,8 +379,9 @@
 			 * callLater 调用
 			 */ 
 			protected function adjustLeftRightButton():void{
+				shipHGroup.validateNow();
 				shipLeftBtn.enabled=false;
-				if(shipHGroup.numChildren > shipHGroup.columnCount)//此处有BUG，不能动态显示个数
+				if(shipHGroup.numChildren > shipHGroup.columnCount)
 					shipRightBtn.enabled=true;
 				else
 					shipRightBtn.enabled=false;				
@@ -411,10 +412,12 @@
 				delCWBTBtn.enabled=true;
 				
 				if(currentShipBtn != null)
-					currentShipBtn.shipName.selected=false;
+					currentShipBtn.shipName.selected=false;			
 				currentShipBtn= e.data as RepairItemShipButton;				
 				currentShip=currentShipBtn.shipObj;
+				
 				RepairItemControl.Instance.setcurrentShip(currentShip.shipId);//在control中设置当前船舶
+				
 				turbineVGroup.removeAllElements();//清空当前显示
 				//显示设备信息
 				if(currentShip!=null){
@@ -423,10 +426,13 @@
 						var equipObj:EquipObject=equipArray.pop() as EquipObject;
 						var equipGroup:TurbineListItem=new TurbineListItem();
 						equipGroup.getData(currentItem.itemId,currentShip.shipId,equipObj);//传递信息（包括 工作卡信息）
-						turbineVGroup.addElement(equipGroup);					
+						turbineVGroup.addElement(equipGroup);	
+						equipGroup.validateNow();
 						equipGroup.addEventListener(RepairEventType.REPAIR_ITEM_GETEQUIP_BACK,setCurrentEquip);//监听，获取当前最新的设备
+						callLater(equipGroup.adjustLeftRightButton);
 					}
 				}
+				
 			}
 			/**
 			 * 添加CWBT
