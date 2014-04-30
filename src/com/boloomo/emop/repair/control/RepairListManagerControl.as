@@ -223,7 +223,9 @@ package com.boloomo.emop.repair.control
 			var obj:Object = e.data as Object;
 			 shipid = obj.shipId;
 			 shipna = obj.shipName;
-			RepairListMgModel.Instance.addDetailsList("seq130",0,"",obj.shipId,"","",1,"","","","","","","","","");
+			 obj.uid = Version.Instance.uid;
+			 										          				    
+			RepairListMgModel.Instance.addDetailsList("seq130",0,"",obj.shipId,"","0",1,"","","2014-04-25","2014-04-25","2014-04-25","","2014-04-25","2014-04-25","");
 		}
 		
 		//修改修理单流程信息
@@ -311,15 +313,16 @@ package com.boloomo.emop.repair.control
 			PopUpManager.centerPopUp(addPanel);
 			PopUpManager.bringToFront(addPanel);
 			}
+			if(applyDetailPanel != null && applyDetailPanel.visible == true ){
+				applyDetailPanel.setDetails(detailObj);
+				return ;
+			}
 			if(obj.seq =="seq131"){
 				data.put(InsertObj.applyId,InsertObj)
 				applyMgPanel.changeData();
 				addPanel.visible = false;
-				
 			}
-			if(applyDetailPanel != null){
-				applyDetailPanel.setDetails(detailObj);
-			}
+			
 		}
 		
 		

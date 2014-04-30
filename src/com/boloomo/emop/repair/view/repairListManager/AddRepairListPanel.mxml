@@ -17,6 +17,8 @@
 	<fx:Script>
 		<![CDATA[
 			import com.boloomo.common.Version;
+			import com.boloomo.emop.component.prompt.PromptEvent;
+			import com.boloomo.emop.component.prompt.promrtWindow;
 			import com.boloomo.emop.component.type.BlmDropListItemObject;
 			import com.boloomo.emop.repair.event.RepairListEvent;
 			import com.boloomo.emop.repair.model.RepairListMgModel;
@@ -42,10 +44,10 @@
 			private var _departVec:Vector.<BlmDropListItemObject> = null;
 			private var _process:ProcessOpreateObject = new ProcessOpreateObject();										//操作对象
 			
-			
 			private var _shipId:String;
 			private var _shipName:String;
 			private var _auditPanel:AuditPanel = null;	
+			private var promrt:promrtWindow;
 			
 			[Embed (source="assets/arrow.png")]
 			[ Bindable ]
@@ -117,6 +119,9 @@
 				process.taskId = "1";
 				process.stepId = "1";
 				process.status = 0;
+				task.text = "申请";
+				step.text = "编制";
+				status.text = "未提交";
 				
 				adate.blm_setDefaultDate(new Date());
 				bdate.blm_setDefaultDate(new Date());
@@ -156,10 +161,8 @@
 			}
 			//修改审核意见
 			private function editAudit(idea:String):void
-			{
-			//	this.refresh();
-			
-			 RepairListMgModel.Instance.changeState("seq15","",applyNo.text,process.stepId,process.stepId,1,idea);
+			{			
+			 RepairListMgModel.Instance.changeState("seq15","",applyNo.text,process.taskId,process.stepId,process.status,idea);
 			 //PurchaseModel.Instance.reqAudit('apply',_applyObject.applyNo,0,_process.taskId,_process.stepId,_process.status,idea);
 			}
 
@@ -239,16 +242,19 @@
 				}
 				if(detailObj.proc == "2"){
 					detailObj.procName="批复";
-					if(detailObj.link == "2"){
+					if(detailObj.link == "1"){
 						detailObj.linkName="批复";
+						if(detailObj.state == "0"){
+							detailObj.stateName = "待批复";
+						}
 						if(detailObj.state == "1"){
-							obj.stateName = "待批复";
+							detailObj.stateName = "已批复";
 						}
 						if(detailObj.state == "2"){
-							obj.stateName = "已退回";
+							detailObj.stateName = "已退回";
 						}
 						if(detailObj.state == "3"){
-							obj.stateName = "已作废";
+							detailObj.stateName = "已作废";
 						}
 					}
 				}
@@ -257,8 +263,11 @@
 					if(detailObj.link == "1"){
 						detailObj.linkName="审核";
 					}
-					if(detailObj.state == "1"){
+					if(detailObj.state == "0"){
 						detailObj.stateName = "待审核";
+					}
+					if(detailObj.state == "1"){
+						detailObj.stateName = "已审核";
 					}
 					if(detailObj.state == "2"){
 						detailObj.stateName = "带派单";
@@ -276,6 +285,13 @@
 
 			protected function saveBtn_clickHandler(event:MouseEvent):void
 			{
+				if(projectId.text == null || projectId.text == ""){
+					promrt = promrtWindow(PopUpManager.createPopUp(AppUtil.Instance.app,promrtWindow,true));
+					promrt.show(PromptEvent.ALERT,"工程单号不能为空");
+					PopUpManager.centerPopUp(promrt);
+					PopUpManager.bringToFront(promrt);
+				return;
+				}
 				detailObj.applyId=applyNo.text;
 				detailObj.shipId = shipId;
 				detailObj.shipName = shipName;
@@ -283,9 +299,9 @@
 				detailObj.department = depart.blm_selected().label;
 				detailObj.type = type.blm_selected().id;
 				detailObj.typeName = type.blm_selected().label;
-				detailObj.proc = process.taskId;
-				detailObj.link = process.stepId;
-				detailObj.state = process.status.toString();
+//				detailObj.proc = process.taskId;
+//				detailObj.link = process.stepId;
+//				detailObj.state = process.status.toString();
 				detailObj.self = parseInt(type.blm_selected().id);
 				detailObj.company = Builder1.text;
 				detailObj.location = repairPort1.input.text;
@@ -299,7 +315,12 @@
 				detailObj.pland =  TimeUtil.getTimeStr(new Date(),"YYYY-MM-DD");
 				detailObj.pstate = "0";
 				detailObj.ldate = ldate.text;
+				detailObj.companyId = "";
 				detailObj.projectId = projectId.text;
+				detailObj.itemObj.itemId = RepItemId.text;
+				detailObj.itemObj.itemName = RepItemName.text;
+				detailObj.itemObj.content = content.text;
+				detailObj.eTime = String(((fdate.blm_getSelectDate().time-bdate.blm_getSelectDate().time)/86400000+1).toFixed(0))+ "天";
 				 BlmEventManager.Instance.dispatchEvent(new BlmEvent(RepairListEvent.REPAIR_InsertRepairList,detailObj));
 				 BlmEventManager.Instance.dispatchEvent(new BlmEvent(RepairListEvent.REPAIR_SAVEREPAIRLIST,detailObj));
 			}

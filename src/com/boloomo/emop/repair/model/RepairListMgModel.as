@@ -17,6 +17,19 @@ package com.boloomo.emop.repair.model
 			}
 		}
 		
+		public function strToDate(str:String):Date{
+			var arr:Array =new Array()
+			arr = str.split("-");
+			var date:Date = new Date();
+			if(arr.length >0){
+				date.fullYear = arr[0];
+				date.month = parseInt(arr[1])-1;
+				date.date = arr[2];
+			}
+			
+			return date;
+		}
+		
 		public static function get Instance():RepairListMgModel
 		{
 			if(g_Instance == null)
@@ -42,14 +55,14 @@ package com.boloomo.emop.repair.model
 		//添加修理单数据
 		public function addDetailsList(seq:String,distype:int,applyid:String,shipid:String,deparid:String,type:String,self:int,comid:String,comna:String,adate:String,bdate:String,fdate:String,loc:String,rbdate:String,rfdate:String,itemid:String):void
 		{
-			var requestStr:String = StringUtils.sprintf("{seq:\"%s\",distype:\%d\,applyid:\"%s\",shipid:\"%s\",deparid:\"%s\",type:\"%s\",self:\%d\,comid:\"%s\",comna:\"%s\",adate:\"%s\",bdate:\"%s\",fdate:\"%s\",loc:\"%s\",rbdate:\"%s\",rfdate:\"%s\",itemid:\"%s\"}",seq,distype,applyid,shipid,deparid,type,self,comid,comna,adate,bdate,fdate,loc,rbdate,rfdate,itemid);
+			var requestStr:String = StringUtils.sprintf("{seq:\"%s\",distype:\%d\,applyid:\"%s\",shipid:\"%s\",deparid:\"%s\",type:\%d\,self:\%d\,comid:\"%s\",comna:\"%s\",adate:\%d\,bdate:\%d\,fdate:\%d\,loc:\"%s\",rbdate:\%d\,rfdate:\%d\,itemid:\"%s\"}",seq,distype,applyid,shipid,deparid,int(type),self,comid,comna,strToDate(adate).time,strToDate(bdate).time,strToDate(fdate).time,loc,strToDate(rbdate).time,strToDate(rfdate).time,itemid);
 			Network.Instance.SendPacket(0x6313,requestStr);	
 		}
 		
 		//保存修改后的修理单数据
 		public function saveDetailsList(seq:String,distype:int,applyid:String,shipid:String,deparid:String,type:String,self:int,comid:String,comna:String,adate:String,bdate:String,fdate:String,loc:String,rbdate:String,rfdate:String,itemid:String):void
 		{
-			var requestStr:String = StringUtils.sprintf("{seq:\"%s\",distype:\%d\,applyid:\"%s\",shipid:\"%s\",deparid:\"%s\",type:\"%s\",self:\%d\,comid:\"%s\",comna:\"%s\",adate:\"%s\",bdate:\"%s\",fdate:\"%s\",loc:\"%s\",rbdate:\"%s\",rfdate:\"%s\",itemid:\"%s\"}",seq,distype,applyid,shipid,deparid,type,self,comid,comna,adate,bdate,fdate,loc,rbdate,rfdate,itemid);
+			var requestStr:String = StringUtils.sprintf("{seq:\"%s\",distype:\%d\,applyid:\"%s\",shipid:\"%s\",deparid:\"%s\",type:\%d\,self:\%d\,comid:\"%s\",comna:\"%s\",adate:\%d\,bdate:\%d\,fdate:\%d\,loc:\"%s\",rbdate:\%d\,rfdate:\%d\,itemid:\"%s\"}",seq,distype,applyid,shipid,deparid,int(type),self,comid,comna,strToDate(adate).time,strToDate(bdate).time,strToDate(fdate).time,loc,strToDate(rbdate).time,strToDate(rfdate).time,itemid);
 			Network.Instance.SendPacket(0x6313,requestStr);	
 		}
 		//请求工程代码和工程名称
@@ -67,7 +80,7 @@ package com.boloomo.emop.repair.model
 		//申请状态变化
 		public function changeState(seq:String,uid:String,applyid:String,proc:String,link:String,st:int,remark:String):void
 		{
-			var requestStr:String = StringUtils.sprintf("{seq:\"%s\",uid:\"%s\",applyid:\"%s\",proc:\"%s\",link:\"%s\",st:\%d\,,remark:\"%s\"}",seq,uid,applyid,proc,link,st,remark);
+			var requestStr:String = StringUtils.sprintf("{seq:\"%s\",uid:\"%s\",applyid:\"%s\",proc:\"%s\",link:\"%s\",st:\%d\,remark:\"%s\"}",seq,uid,applyid,proc,link,st,remark);
 			Network.Instance.SendPacket(0x6315,requestStr);	
 		}
 		public function repProjectList(seq:String,itemid:String):void

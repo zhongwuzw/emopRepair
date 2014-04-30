@@ -58,9 +58,9 @@ package com.boloomo.emop.repair.type
 			obj.department=val.deparn;
 			obj.type=val.type;
 			obj.typeName = val.type == "0"?"厂修":"自修";
-			obj.state=val.st;
-			obj.proc=val.proc;
-			obj.link=val.link;
+			obj.state=val.st == ""?"0":val.st;
+			obj.proc=val.proc == ""?"1":val.proc;
+			obj.link=val.link == ""?"1":val.link;
 			obj.company=val.comna;
 			obj.companyId=val.comid;
 			obj.eTime = String(((val.fdate-val.bdate)/86400000+1).toFixed(0))+ "天";
@@ -77,51 +77,63 @@ package com.boloomo.emop.repair.type
 			obj.ldate=TimeUtil.getTimeStr(new Date(new Number(val.ldate)),"YYYY-MM-DD");
 			obj.lname=val.lname;
 			obj.self=val.self;
-			if(val.proc == "1"){
+			if(obj.proc == "1"){
 				obj.procName="申请";
-				if(val.link == "1"){
+				if(obj.link == "1"){
 					obj.linkName="编制";
-					if(val.st == "1"){
+					if(obj.state == "0"){
 						obj.stateName = "未提交";
 					}
+					if(obj.state == "1"){
+						obj.stateName = "提交";
+					}
 				}
-				if(val.link == "2"){
+				if(obj.link == "2"){
 					obj.linkName="船长确认";
-					if(val.st == "1"){
+					if(obj.state == "0"){
 						obj.stateName = "待船长确认";
+					}
+					if(obj.state == "1"){
+						obj.stateName = "船长确认";
 					}
 				}
 			}
-			if(val.proc == "2"){
+			if(obj.proc == "2"){
 				obj.procName="批复";
-				if(val.link == "2"){
+				if(obj.link == "1"){
 					obj.linkName="批复";
-					if(val.st == "1"){
+					if(obj.state == "0"){
 						obj.stateName = "待批复";
 					}
-					if(val.st == "2"){
+					if(obj.state == "1"){
+						obj.stateName = "已批复";
+					}
+					if(obj.state == "2"){
 						obj.stateName = "已退回";
 					}
-					if(val.st == "3"){
+					if(obj.state == "3"){
 						obj.stateName = "已作废";
 					}
 				}
 			}
-			if(val.proc == "3"){
+			if(obj.proc == "3"){
 				obj.procName="审核";
-				if(val.link == "1"){
+				if(obj.link == "1"){
 					obj.linkName="审核";
 				}
-				if(val.st == "1"){
+				if(obj.state == "0"){
 					obj.stateName = "待审核";
 				}
-				if(val.st == "2"){
+				if(obj.state == "1"){
+					obj.stateName = "已审核";
+				}
+				if(obj.state == "2"){
 					obj.stateName = "带派单";
 				}
-				if(val.st == "3"){
+				if(obj.state == "3"){
 					obj.stateName = "已退回";
 				}
-				if(val.st == "4"){
+				if(obj.state == "4"){
 					obj.stateName = "已作废";
 				}
 			}

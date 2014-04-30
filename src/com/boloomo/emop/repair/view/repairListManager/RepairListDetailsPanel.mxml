@@ -37,7 +37,7 @@
 			private var _auditPanel:AuditPanel;
 			private var shipid:String;
 			private var itemid:String;
-			private var _process:ProcessOpreateObject = null;	
+			private var _process:ProcessOpreateObject = new ProcessOpreateObject();	
 			
 			[Embed (source="assets/arrow.png")]
 			[ Bindable ]
@@ -120,7 +120,7 @@
 			//修改审核意见
 			private function editAudit(idea:String):void
 			{
-				RepairListMgModel.Instance.changeState("seq15","",applyId.text,process.stepId,process.stepId,1,idea);
+				RepairListMgModel.Instance.changeState("seq15","",applyId.text,process.taskId,process.stepId,process.status,idea);
 			}
 			public function refresh():void
 			{
@@ -146,6 +146,66 @@
 						detailObj.state = "0";
 					}
 				}
+				if(detailObj.proc == "1"){
+					detailObj.procName="申请";
+					if(detailObj.link == "1"){
+						detailObj.linkName="编制";
+						if(detailObj.state == "0"){
+							detailObj.stateName = "未提交";
+						}
+						if(detailObj.state == "1"){
+							detailObj.stateName = "提交";
+						}
+					}
+					if(detailObj.link == "2"){
+						detailObj.linkName="船长确认";
+						if(detailObj.state == "0"){
+							detailObj.stateName = "待船长确认";
+						}
+						if(detailObj.state == "1"){
+							detailObj.stateName = "船长确认";
+						}
+					}
+				}
+				if(detailObj.proc == "2"){
+					detailObj.procName="批复";
+					if(detailObj.link == "1"){
+						detailObj.linkName="批复";
+						if(detailObj.state == "0"){
+							detailObj.stateName = "待批复";
+						}
+						if(detailObj.state == "1"){
+							detailObj.stateName = "已批复";
+						}
+						if(detailObj.state == "2"){
+							detailObj.stateName = "已退回";
+						}
+						if(detailObj.state == "3"){
+							detailObj.stateName = "已作废";
+						}
+					}
+				}
+				if(detailObj.proc == "3"){
+					detailObj.procName="审核";
+					if(detailObj.link == "1"){
+						detailObj.linkName="审核";
+					}
+					if(detailObj.state == "0"){
+						detailObj.stateName = "待审核";
+					}
+					if(detailObj.state == "1"){
+						detailObj.stateName = "已审核";
+					}
+					if(detailObj.state == "2"){
+						detailObj.stateName = "带派单";
+					}
+					if(detailObj.state == "3"){
+						detailObj.stateName = "已退回";
+					}
+					if(detailObj.state == "4"){
+						detailObj.stateName = "已作废";
+					}
+				}
 				this.setDefData(detailObj);
 			}
 			public function setDefData(obj:RepairOrderObject):void{
@@ -154,6 +214,9 @@
 					return;
 				detailObj = obj;
 				workFlow.blm_setData(obj.proc,obj.link,int(obj.state));
+				task.text = obj.procName;
+				step.text = obj.linkName;
+				status.text = obj.stateName;
 			}
 			
 			
@@ -163,8 +226,20 @@
 					return;
 				detailObj = obj;
 				if(detailObj.proc != null && detailObj.proc !=""){
+					if(detailObj.state =="1" && detailObj.proc =="1"){
+						detailObj.link = String(parseInt(detailObj.link)+1);
+						detailObj.state = "0";
+					}else{
+						detailObj.state = "0";
+					}
 					workFlow.blm_setData(detailObj.proc,detailObj.link,int(detailObj.state));
 				}else{
+					detailObj.proc = "1";
+					detailObj.procName = "申请";
+					detailObj.link= "1";
+					detailObj.linkName = "编制";
+					detailObj.state = "0";
+					detailObj.stateName = "未提交";
 					workFlow.blm_setData("1","1",0);
 				}
 				shipid = obj.shipId;
@@ -215,8 +290,7 @@
 				for(var i:int = 0;i<arr1.length;i++){
 					arr.addItem(arr1[i]);				
 				}
-				itemid = obj.itemObj.itemId;	
-				
+				itemid = obj.itemObj.itemId;
 			}
 
 			public function get typeVec():Vector.<BlmDropListItemObject>
@@ -236,8 +310,12 @@
 			{
 				Builder1.text = Builder.text;
 				repairPort1.blm_setName(repairPort.text);
-				RepItemId.setStyle("textDecoration","underline");
-				RepItemId.addEventListener(MouseEvent.CLICK,RepItemId_doubleClickHandler);
+				if(RepItemId.text != null && RepItemId.text != ""){
+					RepItemId.setStyle("textDecoration","underline");
+					RepItemId.addEventListener(MouseEvent.CLICK,RepItemId_doubleClickHandler);
+				}else{
+					addList.visible = true;
+				}
 				this.trueFun();
 			}
 
@@ -330,6 +408,7 @@
 				fdate.visible =true;
 				bdate.visible = true;
 				this.title = "修理单详情";
+				addList.visible = false;
 			}
 			
 			public function strToDate(str:String):Date{
@@ -363,12 +442,13 @@
 			protected function saveBtn_clickHandler(event:Event):void
 			{
 				detailObj.type =type1.blm_selected().id;
-				detailObj.location = repairPort1.blm_getPortObject().nameCN;
+				detailObj.location = repairPort1.input.text;
 				detailObj.company = Builder1.text;
 				detailObj.bdate = TimeUtil.getTimeStr(bdate1.blm_getSelectDate(),"YYYY-MM-DD");
 				detailObj.fdate = TimeUtil.getTimeStr(fdate1.blm_getSelectDate(),"YYYY-MM-DD");
 				detailObj.rbdate = TimeUtil.getTimeStr(rbdate1.blm_getSelectDate(),"YYYY-MM-DD");
 				detailObj.rfdate = TimeUtil.getTimeStr(rfdate1.blm_getSelectDate(),"YYYY-MM-DD");
+				detailObj.eTime = String(((bdate1.blm_getSelectDate().time-fdate1.blm_getSelectDate().time)/86400000+1).toFixed(0))+ "天";
 				BlmEventManager.Instance.dispatchEvent(new BlmEvent(RepairListEvent.REPAIR_SAVEREPAIRLIST,detailObj));
 			}
 			protected function RepItemId_doubleClickHandler(event:MouseEvent):void
@@ -487,9 +567,10 @@
 		
 		<s:Label x="10" y="140" text="修理项代码:"/>
 		<s:Label x="76" id="RepItemId" y="141" text="" />
+		<button:blmAddButton id="addList" x="158" y="140" width="13" height="13" click="RepItemId_doubleClickHandler(event)" visible="false" />
 		
-		<s:Label x="158" y="138" text="修理项名称:"/>
-		<s:Label x="223" id="RepItemName" y="138" text=""/>
+		<s:Label x="188" y="138" text="修理项名称:"/>
+		<s:Label x="253" id="RepItemName" y="138" text=""/>
 		
 		
 		<s:Label x="162" y="117" text="编制日期:"/>

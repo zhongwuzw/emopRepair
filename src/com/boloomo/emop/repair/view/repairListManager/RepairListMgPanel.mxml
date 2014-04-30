@@ -407,7 +407,7 @@
 		<mx:DataGrid id="applyGrid" x="0" y="0" height="403" width="1022" dataProvider="{_dataProvider}"
 					 doubleClickEnabled="true" doubleClick="applyGrid_doubleClickHandler(event)" >
 			<mx:columns>
-				<mx:DataGridColumn headerText="申请单号" dataField="applyId" width="100" />
+				<mx:DataGridColumn headerText="申请单号" dataField="applyId" width="130" />
 				<mx:DataGridColumn headerText="船舶" dataField="shipName" />
 				<mx:DataGridColumn headerText="部门" dataField="department"/>
 				<mx:DataGridColumn headerText="类别" dataField="typeName"/>
@@ -417,9 +417,9 @@
 				<mx:DataGridColumn headerText="预计修期" dataField="eTime"/>
 				<mx:DataGridColumn headerText="修理港口" dataField="location"/>
 				<mx:DataGridColumn headerText="施工单位" dataField="company" itemRenderer="com.boloomo.emop.repair.view.repairListManager.RepairListCom" textAlign="left"/>
-				<mx:DataGridColumn headerText="流程" dataField="procName" />
-				<mx:DataGridColumn headerText="环节" dataField="linkName"/>
-				<mx:DataGridColumn headerText="状态" dataField="stateName"/>
+				<mx:DataGridColumn headerText="流程" dataField="procName" width="55" />
+				<mx:DataGridColumn headerText="环节" dataField="linkName" width="55" />
+				<mx:DataGridColumn headerText="状态" dataField="stateName" width="55" />
 				<mx:DataGridColumn headerText="工程单号" dataField="projectId"  itemRenderer="com.boloomo.emop.repair.view.repairListManager.RepairListProject" textAlign="left" />
 			</mx:columns>
 		</mx:DataGrid>

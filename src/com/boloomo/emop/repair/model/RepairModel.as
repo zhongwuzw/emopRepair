@@ -135,7 +135,7 @@ package com.boloomo.emop.repair.model
 			var requestStr:String=StringUtils.sprintf('{seq:"%d",itemid:"%s",type:%d,shipids:"%s"}',type,itemId,type,tempArray.join("|"));
 //			{seq:””，eid：,type:””,shipids:” s01|s02” }
 		//	var temp:String=StringUtils.sprintf('{seq:"11",eid:0,type:"%s",shipids:"%s"}',type,shipId.join("|"));
-			RepairItemControl.Instance.addDelShipVec=shipId;
+//			RepairItemControl.Instance.addDelShipVec=shipId;
 			Network.Instance.SendPacket(0x6306,requestStr);//requestStr = "{seq:2,itemid:"D-100",type:2,shipids:"0001001"}"
 			//requestStr = "{seq:1,itemid:"D-100",type:1,shipids:"0001009"}"//requestStr = "{seq:2,itemid:"D-100",type:2,shipids:"0001009"}"
 			
@@ -150,7 +150,7 @@ package com.boloomo.emop.repair.model
 //			{seq：““，itemid：”“，shipid：”“，type：”“，equipids：”e01|e02“}
 			var requestStr:String=StringUtils.sprintf('{seq:"%d",itemid:"%s",shipid:"%s",type:%d,cwbts:"%s"}',type,itemId,shipId,type,equipObj.equiqId);
 //			{seq:””，eid：,type:””,equipids:” e01|e02” }
-			RepairItemControl.Instance.addDelCwbt=equipObj;
+//			RepairItemControl.Instance.addDelCwbt=equipObj;
 			Network.Instance.SendPacket(0x6307,requestStr);//requestStr = "{seq:"33",itemid:"D-100",shipid:"0001022",type:"1",cwbts:"AS-102-152-002"}"//requestStr = "{seq:"1",itemid:"D-100",shipid:"0001001",type:1,cwbts:"AS-102-152-003"}"
 //			var temp:String=StringUtils.sprintf('{seq:"%s",eid:0}',type);
 //			RepairControl.Instance.onHandleAddDelEquip(temp);
@@ -167,7 +167,7 @@ package com.boloomo.emop.repair.model
 			for(var i:int=0;i<wcId.length;i++)
 				tempArray.push(wcId[i].workCardId);
 			var requestStr:String=StringUtils.sprintf('{seq:"%d",itemid:"%s",shipid:"%s",type:%d,cwbt:"%s",wcsids:"%s"}',type,itemId,shipId,type,equipId,tempArray.join("|"));
-			RepairItemControl.Instance.addDelWorkCardVec=wcId;//requestStr = "{seq:"2",itemid:"D-100",shipid:"0001001",type:2,cwbt:"AS-102-152-001",wcsids:"JBS000100100000"}"
+//			RepairItemControl.Instance.addDelWorkCardVec=wcId;//requestStr = "{seq:"2",itemid:"D-100",shipid:"0001001",type:2,cwbt:"AS-102-152-001",wcsids:"JBS000100100000"}"
 			Network.Instance.SendPacket(0x6308,requestStr);//requestStr = "{seq:"NaN",itemid:"0001001",shipid:"2",type:NaN,cwbt:"JBS000100100000",wcsids:"undefined"}"
 //			var temp:String=StringUtils.sprintf('{seq:"11",eid:0}',type);
 //			RepairControl.Instance.onHandleAddDelWorkCard(temp);
